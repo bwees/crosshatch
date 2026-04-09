@@ -10,7 +10,7 @@ export class PrinterRepository {
     return this.db.select().from(schema.printer);
   }
 
-  async getPrinterBySerial(serial: string) {
+  async getPrinterBySerial(serial: string): Promise<Printer | null> {
     const printers = await this.db
       .select()
       .from(schema.printer)
@@ -26,5 +26,28 @@ export class PrinterRepository {
     accessCode: string;
   }): Promise<Printer[]> {
     return this.db.insert(schema.printer).values(data).returning();
+  }
+
+  deletePrinter(serial: string): Promise<void> {
+    return this.db
+      .delete(schema.printer)
+      .where(eq(schema.printer.serial, serial));
+  }
+
+  async updatePrinter(
+    serial: string,
+    data: {
+      name?: string;
+      hostIp?: string;
+      accessCode?: string;
+    },
+  ): Promise<Printer | null> {
+    const printers = await this.db
+      .update(schema.printer)
+      .set(data)
+      .where(eq(schema.printer.serial, serial))
+      .returning();
+
+    return printers[0] ?? null;
   }
 }

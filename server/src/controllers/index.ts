@@ -1,3 +1,3 @@
-import { PrinterController } from './app.controller';
+import { PrinterController } from './printer.controller';
 
 export const controllers = [PrinterController];

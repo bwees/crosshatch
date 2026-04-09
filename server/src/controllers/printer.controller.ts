@@ -1,0 +1,46 @@
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  Param,
+  Patch,
+  Put,
+} from '@nestjs/common';
+import {
+  CreatePrinterDto,
+  PrinterDto,
+  UpdatePrinterDto,
+} from 'src/dtos/printer.dto';
+import { PrinterService } from 'src/services/printer.service';
+
+@Controller('api/printer')
+export class PrinterController {
+  constructor(private readonly printerService: PrinterService) {}
+
+  @Get()
+  getPrinters(): Promise<PrinterDto[]> {
+    return this.printerService.getPrinters();
+  }
+
+  @Put()
+  @HttpCode(201)
+  createPrinter(@Body() dto: CreatePrinterDto): Promise<PrinterDto> {
+    return this.printerService.createPrinter(dto);
+  }
+
+  @Delete(':serial')
+  @HttpCode(204)
+  deletePrinter(@Param('serial') serial: string): Promise<void> {
+    return this.printerService.deletePrinter(serial);
+  }
+
+  @Patch(':serial')
+  updatePrinter(
+    @Param('serial') serial: string,
+    @Body() dto: UpdatePrinterDto,
+  ): Promise<PrinterDto> {
+    return this.printerService.updatePrinter(serial, dto);
+  }
+}

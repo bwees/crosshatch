@@ -57,7 +57,7 @@ export class BambuMQTTClient {
     this.client.on('message', (_, payload) => {
       const message = payload.toString();
       this.eventEmitter.emit('mqtt.report', {
-        message,
+        payload: JSON.parse(message),
         serial: this.connectionConfig.serial,
       });
     });
