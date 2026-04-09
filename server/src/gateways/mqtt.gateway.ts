@@ -16,7 +16,7 @@ export class MqttGateway implements OnGatewayInit {
 
   @OnEvent('mqtt.report')
   handleMqttMessage(payload: string) {
-    this.server.emit('mqtt.report', JSON.parse(payload));
+    this.server.emit('mqtt.report', JSON.stringify(payload));
   }
 
   afterInit(server: Server) {

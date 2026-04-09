@@ -1,14 +1,20 @@
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { SwaggerModule } from '@nestjs/swagger';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import { IncomingMessage } from 'http';
 import { Duplex } from 'stream';
 import { AppModule } from './app.module';
+import { createOpenApiDocument } from './openapi';
 import { Go2RTCProxy } from './proxies/go2rtc.proxy';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule);
+
+  const openApiDoc = createOpenApiDocument(app);
+
+  SwaggerModule.setup('api', app, openApiDoc);
 
   const server = app.getHttpServer();
   const wsProxy = app.get(Go2RTCProxy);

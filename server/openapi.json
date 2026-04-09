@@ -1,0 +1,191 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/api/printer": {
+      "get": {
+        "operationId": "getPrinters",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PrinterDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Printer"
+        ]
+      },
+      "put": {
+        "operationId": "createPrinter",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePrinterDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrinterDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Printer"
+        ]
+      }
+    },
+    "/api/printer/{serial}": {
+      "delete": {
+        "operationId": "deletePrinter",
+        "parameters": [
+          {
+            "name": "serial",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Printer"
+        ]
+      },
+      "patch": {
+        "operationId": "updatePrinter",
+        "parameters": [
+          {
+            "name": "serial",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePrinterDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrinterDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Printer"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "Hatch API",
+    "description": "Hatch server API",
+    "version": "1.0.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "schemas": {
+      "PrinterDto": {
+        "type": "object",
+        "properties": {
+          "serial": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "hostIp": {
+            "type": "string"
+          },
+          "accessCode": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "serial",
+          "name",
+          "hostIp",
+          "accessCode"
+        ]
+      },
+      "CreatePrinterDto": {
+        "type": "object",
+        "properties": {
+          "serial": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "hostIp": {
+            "type": "string"
+          },
+          "accessCode": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "serial",
+          "name",
+          "hostIp",
+          "accessCode"
+        ]
+      },
+      "UpdatePrinterDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "hostIp": {
+            "type": "string"
+          },
+          "accessCode": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
