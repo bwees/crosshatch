@@ -15,8 +15,8 @@ export function createOpenApiDocument(app: INestApplication) {
   const document = SwaggerModule.createDocument(
     app,
     new DocumentBuilder()
-      .setTitle('Hatch API')
-      .setDescription('Hatch server API')
+      .setTitle('Crosshatch API')
+      .setDescription('Crosshatch server API')
       .setVersion('1.0.0')
       .build(),
     documentOptions,

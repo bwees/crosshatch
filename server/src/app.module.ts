@@ -30,7 +30,7 @@ import { services } from './services';
 const database = DrizzleBetterSQLiteModule.register({
   tag: 'db',
   sqlite3: {
-    filename: 'hatch.db',
+    filename: 'crosshatch.db',
   },
   config: { schema: { ...schema } },
 });

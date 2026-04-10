@@ -117,8 +117,8 @@
     }
   },
   "info": {
-    "title": "Hatch API",
-    "description": "Hatch server API",
+    "title": "Crosshatch API",
+    "description": "Crosshatch server API",
     "version": "1.0.0",
     "contact": {}
   },
