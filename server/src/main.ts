@@ -11,6 +11,7 @@ import { Go2RTCProxy } from './proxies/go2rtc.proxy';
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule);
+  app.enableCors();
 
   const openApiDoc = createOpenApiDocument(app);
 

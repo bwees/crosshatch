@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { Spinner } from '$lib/components/ui/spinner';
+	import { CameraOff } from '@lucide/svelte';
 	import { onDestroy, onMount } from 'svelte';
 
 	interface Props {
@@ -9,6 +11,10 @@
 
 	// eslint-disable-next-line no-useless-assignment
 	let { url, mode = 'webrtc,mse', activeMode = $bindable('negotiating') }: Props = $props();
+
+	let loading = $state(true);
+	let error = $state(false);
+	let timeoutId: ReturnType<typeof setTimeout>;
 
 	const CODECS = [
 		'avc1.640029',
@@ -30,7 +36,20 @@
 	let pc: RTCPeerConnection | null = null;
 	let mseCodecs = '';
 
+	function markConnected() {
+		loading = false;
+		error = false;
+		clearTimeout(timeoutId);
+	}
+
 	onMount(() => {
+		timeoutId = setTimeout(() => {
+			if (loading) {
+				loading = false;
+				error = true;
+			}
+		}, 10000);
+
 		ws = new WebSocket(url);
 		ws.binaryType = 'arraybuffer';
 
@@ -102,7 +121,10 @@
 			if (msg.type !== 'mse') return;
 
 			mseCodecs = msg.value;
-			if (!pc) activeMode = 'mse';
+			if (!pc) {
+				activeMode = 'mse';
+				markConnected();
+			}
 
 			const sb = ms.addSourceBuffer(msg.value);
 			sb.mode = 'segments';
@@ -197,6 +219,7 @@
 							});
 
 							activeMode = 'webrtc';
+							markConnected();
 
 							// WebRTC won — close the WebSocket (MSE not needed)
 							if (ws) {
@@ -206,6 +229,7 @@
 						} else {
 							// MSE won — close WebRTC
 							activeMode = 'mse';
+							markConnected();
 							pc?.close();
 							pc = null;
 						}
@@ -245,6 +269,7 @@
 	}
 
 	onDestroy(() => {
+		clearTimeout(timeoutId);
 		if (ws) {
 			ws.close();
 			ws = null;
@@ -256,4 +281,24 @@
 	});
 </script>
 
-<video bind:this={videoEl} autoplay muted></video>
+<div class="relative aspect-video w-full">
+	{#if loading}
+		<div class="absolute inset-0 flex items-center justify-center">
+			<Spinner class="size-8" />
+		</div>
+	{:else if error}
+		<div
+			class="absolute inset-0 flex flex-col items-center justify-center gap-2 text-sm text-muted-foreground"
+		>
+			<CameraOff class="size-8 text-muted-foreground" />
+			Connection timed out
+		</div>
+	{/if}
+	<video
+		bind:this={videoEl}
+		autoplay
+		muted
+		class="h-full w-full object-contain"
+		class:invisible={loading || error}
+	></video>
+</div>

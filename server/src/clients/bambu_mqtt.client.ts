@@ -1,6 +1,12 @@
 import { Logger } from '@nestjs/common';
-import { EventEmitter2 } from '@nestjs/event-emitter';
+import { mergeWith } from 'lodash';
 import mqtt, { MqttClient } from 'mqtt';
+import {
+  BambuPrinterMessageSchema,
+  BambuPrintMessage,
+  BambuPrintState,
+} from 'src/dtos/mqtt.dto';
+import { MaybePromise } from 'src/utils/utils';
 
 type PrinterConnectionConfig = {
   hostIp: string;
@@ -11,8 +17,13 @@ type PrinterConnectionConfig = {
 export class BambuMQTTClient {
   private connectionConfig: PrinterConnectionConfig;
   private client: MqttClient;
-  private readonly eventEmitter: EventEmitter2;
   private readonly logger: Logger;
+  private onStatusUpdate: (
+    serial: string,
+    status: BambuPrintState,
+  ) => MaybePromise<void>;
+
+  private state: BambuPrintState | null = null;
 
   // MQTT topic for receiving printer reports
   get reportTopic() {
@@ -21,12 +32,15 @@ export class BambuMQTTClient {
 
   constructor(
     connection: PrinterConnectionConfig,
-    eventEmitter: EventEmitter2,
+    onStatusUpdate: (
+      serial: string,
+      status: BambuPrintState,
+    ) => MaybePromise<void>,
     logger: Logger = new Logger(`${BambuMQTTClient.name}-${connection.serial}`),
   ) {
-    this.eventEmitter = eventEmitter;
     this.logger = logger;
     this.connectionConfig = connection;
+    this.onStatusUpdate = onStatusUpdate;
 
     this.client = mqtt.connect({
       host: connection.hostIp,
@@ -56,10 +70,23 @@ export class BambuMQTTClient {
 
     this.client.on('message', (_, payload) => {
       const message = payload.toString();
-      this.eventEmitter.emit('mqtt.report', {
-        payload: JSON.parse(message),
-        serial: this.connectionConfig.serial,
-      });
+
+      const jsonPayload = JSON.parse(message);
+      const parsedPayload = BambuPrinterMessageSchema.safeParse(jsonPayload);
+
+      if (!parsedPayload.success) {
+        this.logger.warn(
+          `Received invalid MQTT message on topic "${this.reportTopic}": ${parsedPayload.error}`,
+        );
+        return;
+      }
+
+      if (!('print' in parsedPayload.data)) {
+        return;
+      }
+
+      this.state = this.mergePrintState(this.state, parsedPayload.data!.print!);
+      void this.onStatusUpdate(this.connectionConfig.serial, this.state);
     });
 
     this.client.on('error', (err) => {
@@ -71,5 +98,19 @@ export class BambuMQTTClient {
     this.client.end(() => {
       this.logger.debug('MQTT client disconnected');
     });
+  }
+
+  private mergePrintState(
+    currentState: BambuPrintState | null,
+    nextMessage: BambuPrintMessage,
+  ): BambuPrintState {
+    const base = currentState ?? {};
+    return mergeWith({}, base, nextMessage, (_, sourceValue) => {
+      if (Array.isArray(sourceValue)) {
+        return sourceValue;
+      }
+
+      return undefined;
+    }) as BambuPrintState;
   }
 }

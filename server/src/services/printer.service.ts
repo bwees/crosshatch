@@ -1,7 +1,8 @@
 import { Logger } from '@nestjs/common';
 import { BambuMQTTClient } from 'src/clients/bambu_mqtt.client';
-import { Printer } from 'src/db/schema';
-import { CreatePrinterDto, UpdatePrinterDto } from 'src/dtos/printer.dto';
+import { BambuPrintState } from 'src/dtos/mqtt.dto';
+import { PrinterDto, UpdatePrinterDto } from 'src/dtos/printer.dto';
+import { statusFromMQTT } from 'src/dtos/printer_status.dto';
 import { streamURLForPrinter } from 'src/utils/utils';
 import { BaseService } from './base.service';
 
@@ -9,14 +10,26 @@ export class PrinterService extends BaseService {
   private mqttClients: Map<string, BambuMQTTClient> = new Map();
   private readonly logger = new Logger(PrinterService.name);
 
-  getPrinters(): Promise<Printer[]> {
+  getPrinters(): Promise<PrinterDto[]> {
     return this.printerRepository.getPrinters();
   }
 
-  async createPrinter(dto: CreatePrinterDto) {
+  async onPrinterStatusUpdate(serial: string, status: BambuPrintState) {
+    const statusDto = statusFromMQTT(status);
+    console.log(`Received status update for printer ${serial}:`, statusDto);
+    this.eventEmitter.emit('printer.status', {
+      serial,
+      ...statusDto,
+    });
+  }
+
+  async createPrinter(dto: PrinterDto) {
     const printer = (await this.printerRepository.createPrinter(dto))[0];
 
-    const client = new BambuMQTTClient(printer, this.eventEmitter);
+    const client = new BambuMQTTClient(
+      printer,
+      this.onPrinterStatusUpdate.bind(this),
+    );
     this.mqttClients.set(printer.serial, client);
 
     await this.syncCameraStreams();
@@ -89,8 +102,18 @@ export class PrinterService extends BaseService {
     const printers = await this.printerRepository.getPrinters();
 
     for (const printer of printers) {
-      const client = new BambuMQTTClient(printer, this.eventEmitter);
+      const client = new BambuMQTTClient(
+        printer,
+        this.onPrinterStatusUpdate.bind(this),
+      );
       this.mqttClients.set(printer.serial, client);
     }
+  }
+
+  async onModuleDestroy() {
+    for (const client of this.mqttClients.values()) {
+      client.disconnect();
+    }
+    this.mqttClients.clear();
   }
 }

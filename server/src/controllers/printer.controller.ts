@@ -8,11 +8,7 @@ import {
   Patch,
   Put,
 } from '@nestjs/common';
-import {
-  CreatePrinterDto,
-  PrinterDto,
-  UpdatePrinterDto,
-} from 'src/dtos/printer.dto';
+import { PrinterDto, UpdatePrinterDto } from 'src/dtos/printer.dto';
 import { PrinterService } from 'src/services/printer.service';
 
 @Controller('api/printer')
@@ -26,7 +22,7 @@ export class PrinterController {
 
   @Put()
   @HttpCode(201)
-  createPrinter(@Body() dto: CreatePrinterDto): Promise<PrinterDto> {
+  createPrinter(@Body() dto: PrinterDto): Promise<PrinterDto> {
     return this.printerService.createPrinter(dto);
   }
 

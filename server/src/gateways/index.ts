@@ -1,3 +1,3 @@
-import { MqttGateway } from './mqtt.gateway';
+import { WebsocketGateway } from './ws.gateway';
 
-export const gateways = [MqttGateway];
+export const gateways = [WebsocketGateway];

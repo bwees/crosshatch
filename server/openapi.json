@@ -32,7 +32,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreatePrinterDto"
+                "$ref": "#/components/schemas/PrinterDto"
               }
             }
           }
@@ -149,29 +149,6 @@
           "accessCode"
         ]
       },
-      "CreatePrinterDto": {
-        "type": "object",
-        "properties": {
-          "serial": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "hostIp": {
-            "type": "string"
-          },
-          "accessCode": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "serial",
-          "name",
-          "hostIp",
-          "accessCode"
-        ]
-      },
       "UpdatePrinterDto": {
         "type": "object",
         "properties": {
@@ -185,6 +162,54 @@
             "type": "string"
           }
         }
+      },
+      "PrinterStatusDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "idle"
+                ]
+              },
+              {
+                "type": "string",
+                "enum": [
+                  "printing"
+                ]
+              },
+              {
+                "type": "string",
+                "enum": [
+                  "paused"
+                ]
+              },
+              {
+                "type": "string",
+                "enum": [
+                  "error"
+                ]
+              }
+            ]
+          },
+          "progress": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "fileName": {
+            "type": "string"
+          },
+          "timeRemaining": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "status",
+          "progress"
+        ]
       }
     }
   }

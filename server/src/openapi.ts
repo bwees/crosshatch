@@ -5,11 +5,13 @@ import {
   SwaggerModule,
 } from '@nestjs/swagger';
 import { cleanupOpenApiDoc } from 'nestjs-zod';
+import { PrinterStatusDto } from './dtos/printer_status.dto';
 
 export function createOpenApiDocument(app: INestApplication) {
   const documentOptions: SwaggerDocumentOptions = {
     operationIdFactory: (_controllerKey: string, methodKey: string) =>
       methodKey,
+    extraModels: [PrinterStatusDto],
   };
 
   const document = SwaggerModule.createDocument(

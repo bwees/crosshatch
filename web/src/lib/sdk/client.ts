@@ -18,48 +18,48 @@ export type PrinterDto = {
     hostIp: string;
     accessCode: string;
 };
-export type CreatePrinterDto = {
-    serial: string;
-    name: string;
-    hostIp: string;
-    accessCode: string;
-};
 export type UpdatePrinterDto = {
     name?: string;
     hostIp?: string;
     accessCode?: string;
 };
+export type PrinterStatusDto = {
+    status: "idle" | "printing" | "paused" | "error";
+    progress: number;
+    fileName?: string;
+    timeRemaining?: number;
+};
 export function getPrinters(opts?: Oazapfts.RequestOpts) {
-    return oazapfts.fetchJson<{
+    return oazapfts.ok(oazapfts.fetchJson<{
         status: 200;
         data: PrinterDto[];
     }>("/api/printer", {
         ...opts
-    });
+    }));
 }
-export function createPrinter(createPrinterDto: CreatePrinterDto, opts?: Oazapfts.RequestOpts) {
-    return oazapfts.fetchJson<{
+export function createPrinter(printerDto: PrinterDto, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.ok(oazapfts.fetchJson<{
         status: 201;
         data: PrinterDto;
     }>("/api/printer", oazapfts.json({
         ...opts,
         method: "PUT",
-        body: createPrinterDto
-    }));
+        body: printerDto
+    })));
 }
 export function deletePrinter(serial: string, opts?: Oazapfts.RequestOpts) {
-    return oazapfts.fetchText(`/api/printer/${encodeURIComponent(serial)}`, {
+    return oazapfts.ok(oazapfts.fetchText(`/api/printer/${encodeURIComponent(serial)}`, {
         ...opts,
         method: "DELETE"
-    });
+    }));
 }
 export function updatePrinter(serial: string, updatePrinterDto: UpdatePrinterDto, opts?: Oazapfts.RequestOpts) {
-    return oazapfts.fetchJson<{
+    return oazapfts.ok(oazapfts.fetchJson<{
         status: 200;
         data: PrinterDto;
     }>(`/api/printer/${encodeURIComponent(serial)}`, oazapfts.json({
         ...opts,
         method: "PATCH",
         body: updatePrinterDto
-    }));
+    })));
 }
