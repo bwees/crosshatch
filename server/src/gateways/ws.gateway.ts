@@ -23,6 +23,5 @@ export class WebsocketGateway implements OnGatewayInit {
   @OnEvent('printer.status')
   handlePrinterStatus(payload: { serial: string } & PrinterStatusDto) {
     this.server.emit('printer.status', JSON.stringify(payload));
-    console.log('Emitted printer status update:', payload);
   }
 }

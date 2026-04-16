@@ -16,7 +16,6 @@ export class PrinterService extends BaseService {
 
   async onPrinterStatusUpdate(serial: string, status: BambuPrintState) {
     const statusDto = statusFromMQTT(status);
-    console.log(`Received status update for printer ${serial}:`, statusDto);
     this.eventEmitter.emit('printer.status', {
       serial,
       ...statusDto,
