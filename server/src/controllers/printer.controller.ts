@@ -6,6 +6,7 @@ import {
   HttpCode,
   Param,
   Patch,
+  Post,
   Put,
 } from '@nestjs/common';
 import { PrinterDto, UpdatePrinterDto } from 'src/dtos/printer.dto';
@@ -38,5 +39,23 @@ export class PrinterController {
     @Body() dto: UpdatePrinterDto,
   ): Promise<PrinterDto> {
     return this.printerService.updatePrinter(serial, dto);
+  }
+
+  @Post(':serial/stop')
+  @HttpCode(204)
+  stopPrint(@Param('serial') serial: string): Promise<void> {
+    return this.printerService.stopPrint(serial);
+  }
+
+  @Post(':serial/pause')
+  @HttpCode(204)
+  pausePrint(@Param('serial') serial: string): Promise<void> {
+    return this.printerService.pausePrint(serial);
+  }
+
+  @Post(':serial/resume')
+  @HttpCode(204)
+  resumePrint(@Param('serial') serial: string): Promise<void> {
+    return this.printerService.resumePrint(serial);
   }
 }

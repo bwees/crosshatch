@@ -25,6 +25,8 @@ export class BambuMQTTClient {
 
   private state: BambuPrintState | null = null;
 
+  private COMMAND_TOPIC: string;
+
   // MQTT topic for receiving printer reports
   get reportTopic() {
     return `device/${this.connectionConfig.serial}/report`;
@@ -41,6 +43,8 @@ export class BambuMQTTClient {
     this.logger = logger;
     this.connectionConfig = connection;
     this.onStatusUpdate = onStatusUpdate;
+
+    this.COMMAND_TOPIC = `device/${this.connectionConfig.serial}/control`;
 
     this.client = mqtt.connect({
       host: connection.hostIp,
@@ -112,5 +116,45 @@ export class BambuMQTTClient {
 
       return undefined;
     }) as BambuPrintState;
+  }
+
+  private async sendCommand(payload: object): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.client.publish(
+        this.COMMAND_TOPIC,
+        JSON.stringify(payload),
+        (err) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve();
+          }
+        },
+      );
+    });
+  }
+
+  // Control Methods
+
+  async stopPrint(): Promise<void> {
+    this.logger.debug(
+      `Sending stop command to printer ${this.connectionConfig.serial}`,
+    );
+
+    await this.sendCommand({ print: { command: 'stop' } });
+  }
+
+  async pausePrint(): Promise<void> {
+    this.logger.debug(
+      `Sending pause command to printer ${this.connectionConfig.serial}`,
+    );
+    await this.sendCommand({ print: { command: 'pause' } });
+  }
+
+  async resumePrint(): Promise<void> {
+    this.logger.debug(
+      `Sending resume command to printer ${this.connectionConfig.serial}`,
+    );
+    await this.sendCommand({ print: { command: 'resume' } });
   }
 }

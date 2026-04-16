@@ -10,12 +10,18 @@ class PrinterManager {
 	printers: Map<string, PrinterDto> = new SvelteMap();
 	printerState: Map<string, PrinterStatusDto> = new SvelteMap();
 
-	async initialize() {
+	async refreshPrinters() {
 		const printers = await getPrinters();
+		this.printers.clear();
+		this.printerManagers.clear();
 		for (const printer of printers) {
 			this.printerManagers.set(printer.serial, new BambuPrinterManager(printer));
 			this.printers.set(printer.serial, printer);
 		}
+	}
+
+	async initialize() {
+		await this.refreshPrinters();
 
 		this.stateSocket = io(`http://${window.location.host}`, {
 			path: '/api/ws',

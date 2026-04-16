@@ -97,6 +97,33 @@ export class PrinterService extends BaseService {
     }
   }
 
+  async resumePrint(serial: string): Promise<void> {
+    const client = this.mqttClients.get(serial);
+    if (!client) {
+      throw new Error(`MQTT client for printer ${serial} not found`);
+    }
+
+    await client.resumePrint();
+  }
+
+  async pausePrint(serial: string): Promise<void> {
+    const client = this.mqttClients.get(serial);
+    if (!client) {
+      throw new Error(`MQTT client for printer ${serial} not found`);
+    }
+
+    await client.pausePrint();
+  }
+
+  async stopPrint(serial: string): Promise<void> {
+    const client = this.mqttClients.get(serial);
+    if (!client) {
+      throw new Error(`MQTT client for printer ${serial} not found`);
+    }
+
+    await client.stopPrint();
+  }
+
   async onModuleInit() {
     const printers = await this.printerRepository.getPrinters();
 

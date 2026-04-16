@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { Spinner } from '$lib/components/ui/spinner';
 	import { CameraOff } from '@lucide/svelte';
-	import { onDestroy, onMount } from 'svelte';
 
 	interface Props {
 		url: string;
@@ -42,7 +41,13 @@
 		clearTimeout(timeoutId);
 	}
 
-	onMount(() => {
+	$effect(() => {
+		const currentUrl = url;
+
+		loading = true;
+		error = false;
+		mseCodecs = '';
+
 		timeoutId = setTimeout(() => {
 			if (loading) {
 				loading = false;
@@ -50,7 +55,7 @@
 			}
 		}, 10000);
 
-		ws = new WebSocket(url);
+		ws = new WebSocket(currentUrl);
 		ws.binaryType = 'arraybuffer';
 
 		let ondata: ((data: ArrayBuffer) => void) | null = null;
@@ -80,6 +85,23 @@
 		ws.addEventListener('close', () => {
 			console.log('go2rtc WebSocket closed');
 		});
+
+		return () => {
+			clearTimeout(timeoutId);
+			if (ws) {
+				ws.close();
+				ws = null;
+			}
+			if (pc) {
+				pc.close();
+				pc = null;
+			}
+			if (videoEl) {
+				videoEl.srcObject = null;
+				videoEl.removeAttribute('src');
+				videoEl.load();
+			}
+		};
 	});
 
 	function setupMSE(
@@ -267,18 +289,6 @@
 			ws!.send(JSON.stringify({ type: 'webrtc/offer', value: offer.sdp }));
 		});
 	}
-
-	onDestroy(() => {
-		clearTimeout(timeoutId);
-		if (ws) {
-			ws.close();
-			ws = null;
-		}
-		if (pc) {
-			pc.close();
-			pc = null;
-		}
-	});
 </script>
 
 <div class="relative aspect-video w-full">
