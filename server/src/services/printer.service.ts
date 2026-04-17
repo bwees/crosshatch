@@ -2,7 +2,7 @@ import { Logger } from '@nestjs/common';
 import { BambuMQTTClient } from 'src/clients/bambu_mqtt.client';
 import { BambuPrintState } from 'src/dtos/mqtt.dto';
 import { PrinterDto, UpdatePrinterDto } from 'src/dtos/printer.dto';
-import { statusFromMQTT } from 'src/dtos/printer_status.dto';
+import { PrinterStatusDto, statusFromMQTT } from 'src/dtos/printer_status.dto';
 import { streamURLForPrinter } from 'src/utils/utils';
 import { BaseService } from './base.service';
 
@@ -122,6 +122,28 @@ export class PrinterService extends BaseService {
     }
 
     await client.stopPrint();
+  }
+
+  async getPrinterState(serial: string): Promise<BambuPrintState | null> {
+    const client = this.mqttClients.get(serial);
+    if (!client) {
+      throw new Error(`MQTT client for printer ${serial} not found`);
+    }
+
+    return client.state;
+  }
+
+  async getAllPrinterStates(): Promise<
+    Record<string, PrinterStatusDto | null>
+  > {
+    const states: Record<string, PrinterStatusDto | null> = {};
+    for (const [serial, client] of this.mqttClients.entries()) {
+      if (!client.state) {
+        continue;
+      }
+      states[serial] = statusFromMQTT(client.state);
+    }
+    return states;
   }
 
   async onModuleInit() {

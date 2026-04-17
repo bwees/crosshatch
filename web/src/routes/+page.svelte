@@ -6,6 +6,10 @@
 	import { Printer } from '@lucide/svelte';
 </script>
 
+<svelte:head>
+	<title>Printers</title>
+</svelte:head>
+
 <div class="lg-grid-cols-3 grid grid-cols-1 gap-4 md:grid-cols-2">
 	{#each printerManager.printers.entries() as [serial, printer] (serial)}
 		<Card

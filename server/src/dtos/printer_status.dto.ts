@@ -80,22 +80,103 @@ export enum PrinterStage {
 
 const PrinterStageSchema = z.enum(PrinterStage);
 
+const AMSTraySchema = z.object({
+  id: z.number(),
+  empty: z.boolean(),
+  loaded: z.boolean(),
+  material: z.string().optional(),
+  brand: z.string().optional(),
+  color: z.string().optional(),
+  kValue: z.number().optional(),
+  nozzleTempMin: z.number().optional(),
+  nozzleTempMax: z.number().optional(),
+  remaining: z.number().optional(),
+});
+
+const AMSUnitSchema = z.object({
+  id: z.number(),
+  humidity: z.number(),
+  temperature: z.number(),
+  trays: z.array(AMSTraySchema),
+});
+
 const PrinterStatusSchema = z.object({
   state: PrinterStateSchema,
   stage: PrinterStageSchema.optional(),
   progress: z.number().min(0).max(100),
   fileName: z.string().optional(),
   timeRemaining: z.number().optional(),
+  buildPlate: z.object({
+    temperature: z.number(),
+    targetTemperature: z.number(),
+  }),
+  nozzle: z.object({
+    temperature: z.number(),
+    targetTemperature: z.number(),
+  }),
+  chamber: z.object({
+    temperature: z.number(),
+    targetTemperature: z.number(),
+  }),
+  ams: z.array(AMSUnitSchema),
+  externalSpool: AMSTraySchema.optional(),
 });
 
 export class PrinterStatusDto extends createZodDto(PrinterStatusSchema) {}
 
 export function statusFromMQTT(payload: BambuPrintState): PrinterStatusDto {
+  // console.log(payload);
+  const trayNow = payload.ams.tray_now;
   return {
     state: PrinterStateSchema.parse(payload.gcode_state),
     stage: PrinterStageSchema.parse(payload.stg_cur),
     progress: payload.mc_percent,
     fileName: payload.file,
     timeRemaining: payload.mc_remaining_time,
+    buildPlate: {
+      temperature: payload.bed_temper,
+      targetTemperature: payload.bed_target_temper,
+    },
+    nozzle: {
+      temperature: payload.nozzle_temper,
+      targetTemperature: payload.nozzle_target_temper,
+    },
+    chamber: {
+      temperature: payload.device.ctc.info.temp & 0xffff,
+      targetTemperature: (payload.device.ctc.info.temp >> 16) & 0xffff,
+    },
+    ams: payload.ams.ams.map((unit) => ({
+      id: unit.id,
+      humidity: unit.humidity,
+      temperature: unit.temp,
+      trays: unit.tray.map((tray) => {
+        const trayId = tray.id ?? 0;
+        const globalId = unit.id * 4 + trayId;
+        return {
+          id: trayId,
+          empty: !tray.tray_type,
+          loaded: trayNow === String(globalId),
+          material: tray.tray_type || undefined,
+          brand: tray.tray_sub_brands || undefined,
+          color: tray.tray_color || undefined,
+          nozzleTempMin: tray.nozzle_temp_min,
+          nozzleTempMax: tray.nozzle_temp_max,
+          remaining: tray.remain,
+        };
+      }),
+    })),
+    externalSpool: payload.vir_slot?.[0]
+      ? {
+          id: payload.vir_slot[0].id ?? 254,
+          empty: !payload.vir_slot[0].tray_type,
+          loaded: trayNow === '254',
+          material: payload.vir_slot[0].tray_type || undefined,
+          brand: payload.vir_slot[0].tray_sub_brands || undefined,
+          color: payload.vir_slot[0].tray_color || undefined,
+          nozzleTempMin: payload.vir_slot[0].nozzle_temp_min,
+          nozzleTempMax: payload.vir_slot[0].nozzle_temp_max,
+          remaining: payload.vir_slot[0].remain,
+        }
+      : undefined,
   };
 }

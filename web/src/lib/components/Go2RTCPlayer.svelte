@@ -112,27 +112,40 @@
 
 		if ('ManagedMediaSource' in window) {
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			ms = new (window as any).ManagedMediaSource();
+			const MMS = (window as any).ManagedMediaSource;
+			ms = new MMS();
+			// On iOS Safari, ManagedMediaSource defers `sourceopen` until the
+			// element actually demands data — the `videoEl.play()` below forces
+			// that. Send the codec request from `sourceopen` so the server
+			// doesn't reply before the MediaSource is ready to receive data.
+			ms.addEventListener(
+				'sourceopen',
+				() => {
+					ws!.send(JSON.stringify({ type: 'mse', value: supportedCodecs(MMS.isTypeSupported) }));
+				},
+				{ once: true }
+			);
 			videoEl.disableRemotePlayback = true;
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			(videoEl as any).srcObject = ms;
 		} else {
 			ms = new MediaSource();
-			videoEl.src = URL.createObjectURL(ms);
-		}
-
-		ms.addEventListener(
-			'sourceopen',
-			() => {
-				if (!('ManagedMediaSource' in window)) {
+			ms.addEventListener(
+				'sourceopen',
+				() => {
 					URL.revokeObjectURL(videoEl.src);
-				}
-				ws!.send(
-					JSON.stringify({ type: 'mse', value: supportedCodecs(MediaSource.isTypeSupported) })
-				);
-			},
-			{ once: true }
-		);
+					ws!.send(
+						JSON.stringify({
+							type: 'mse',
+							value: supportedCodecs(MediaSource.isTypeSupported)
+						})
+					);
+				},
+				{ once: true }
+			);
+			videoEl.src = URL.createObjectURL(ms);
+			videoEl.srcObject = null;
+		}
 
 		videoEl.play().catch(() => {
 			videoEl.muted = true;
@@ -141,58 +154,72 @@
 
 		onmessage['mse'] = (msg) => {
 			if (msg.type !== 'mse') return;
-
+			if (ms.readyState !== 'open') return;
 			mseCodecs = msg.value;
-			if (!pc) {
-				activeMode = 'mse';
-				markConnected();
+			attachSourceBuffer(ms, msg.value, setOnData);
+		};
+	}
+
+	function attachSourceBuffer(
+		ms: MediaSource,
+		codec: string,
+		setOnData: (handler: (data: ArrayBuffer) => void) => void
+	) {
+		const sb = ms.addSourceBuffer(codec);
+		sb.mode = 'segments';
+
+		const buf = new Uint8Array(2 * 1024 * 1024);
+		let bufLen = 0;
+
+		sb.addEventListener('updateend', () => {
+			if (!sb.updating && bufLen > 0) {
+				try {
+					sb.appendBuffer(buf.slice(0, bufLen));
+					bufLen = 0;
+				} catch {
+					/* buffer full */
+				}
 			}
 
-			const sb = ms.addSourceBuffer(msg.value);
-			sb.mode = 'segments';
-
-			const buf = new Uint8Array(2 * 1024 * 1024);
-			let bufLen = 0;
-
-			sb.addEventListener('updateend', () => {
-				if (!sb.updating && bufLen > 0) {
-					try {
-						sb.appendBuffer(buf.slice(0, bufLen));
-						bufLen = 0;
-					} catch {
-						/* buffer full */
-					}
+			if (!sb.updating && sb.buffered?.length) {
+				const end = sb.buffered.end(sb.buffered.length - 1);
+				const start = end - 5;
+				const start0 = sb.buffered.start(0);
+				if (start > start0) {
+					sb.remove(start0, start);
+					ms.setLiveSeekableRange(start, end);
 				}
-
-				if (!sb.updating && sb.buffered?.length) {
-					const end = sb.buffered.end(sb.buffered.length - 1);
-					const start = end - 5;
-					const start0 = sb.buffered.start(0);
-					if (start > start0) {
-						sb.remove(start0, start);
-						ms.setLiveSeekableRange(start, end);
-					}
-					if (videoEl.currentTime < start) {
-						videoEl.currentTime = start;
-					}
-					videoEl.playbackRate = Math.max(end - videoEl.currentTime, 0.1);
+				if (videoEl.currentTime < start) {
+					videoEl.currentTime = start;
 				}
-			});
+				videoEl.playbackRate = Math.max(end - videoEl.currentTime, 0.1);
 
-			setOnData((data) => {
-				if (sb.updating || bufLen > 0) {
-					const b = new Uint8Array(data);
-					buf.set(b, bufLen);
-					bufLen += b.byteLength;
-				} else {
-					try {
-						sb.appendBuffer(data);
-					} catch {
-						/* buffer full */
-					}
+				// MSE is producing playable data. If WebRTC hasn't already taken
+				// over, commit to MSE — WebRTC often hangs in 'connecting' behind
+				// NAT/firewalls and never transitions to 'failed', so waiting on
+				// it would just time out despite MSE working fine.
+				if (activeMode !== 'webrtc' && pc && pc.connectionState !== 'connected') {
+					pc.close();
+					pc = null;
+					activeMode = 'mse';
+					markConnected();
 				}
-			});
-		};
+			}
+		});
+
+		setOnData((data) => {
+			if (sb.updating || bufLen > 0) {
+				const b = new Uint8Array(data);
+				buf.set(b, bufLen);
+				bufLen += b.byteLength;
+			} else {
+				try {
+					sb.appendBuffer(data);
+				} catch {
+					/* buffer full */
+				}
+			}
+		});
 	}
 
 	function setupWebRTC(onmessage: Record<string, (msg: { type: string; value: string }) => void>) {
@@ -264,6 +291,10 @@
 			} else if (pc?.connectionState === 'failed' || pc?.connectionState === 'disconnected') {
 				pc.close();
 				pc = null;
+				if (mseCodecs) {
+					activeMode = 'mse';
+					markConnected();
+				}
 			}
 		});
 
@@ -276,7 +307,14 @@
 					pc?.setRemoteDescription({ type: 'answer', sdp: msg.value }).catch(console.warn);
 					break;
 				case 'error':
-					if (msg.value.includes('webrtc/offer')) pc?.close();
+					if (msg.value.includes('webrtc/offer')) {
+						pc?.close();
+						pc = null;
+						if (mseCodecs) {
+							activeMode = 'mse';
+							markConnected();
+						}
+					}
 					break;
 			}
 		};
@@ -308,6 +346,7 @@
 		bind:this={videoEl}
 		autoplay
 		muted
+		playsinline
 		class="h-full w-full object-contain"
 		class:invisible={loading || error}
 	></video>

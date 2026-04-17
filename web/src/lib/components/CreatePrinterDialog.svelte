@@ -63,20 +63,15 @@
 		<div class="grid gap-4">
 			<div class="grid gap-3">
 				<Label for="printer-serial">Serial Number</Label>
-				<Input
-					id="printer-serial"
-					bind:value={serial}
-					placeholder="e.g. 01P00A000000000"
-					required
-				/>
+				<Input id="printer-serial" bind:value={serial} placeholder="01P00A000000000" required />
 			</div>
 			<div class="grid gap-3">
 				<Label for="printer-name">Name</Label>
-				<Input id="printer-name" bind:value={name} placeholder="e.g. My Printer" required />
+				<Input id="printer-name" bind:value={name} placeholder="My Printer" required />
 			</div>
 			<div class="grid gap-3">
 				<Label for="printer-host">Host IP</Label>
-				<Input id="printer-host" bind:value={hostIp} placeholder="e.g. 192.168.1.100" required />
+				<Input id="printer-host" bind:value={hostIp} placeholder="192.168.1.100" required />
 			</div>
 			<div class="grid gap-3">
 				<Label for="printer-access-code">Access Code</Label>

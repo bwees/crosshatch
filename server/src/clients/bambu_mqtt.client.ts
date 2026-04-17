@@ -23,7 +23,7 @@ export class BambuMQTTClient {
     status: BambuPrintState,
   ) => MaybePromise<void>;
 
-  private state: BambuPrintState | null = null;
+  state: BambuPrintState | null = null;
 
   private COMMAND_TOPIC: string;
 

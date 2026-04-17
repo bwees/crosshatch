@@ -4,7 +4,7 @@
 
 <script lang="ts">
 	import { Button } from '$lib/components/ui/button/index.js';
-	import { cn, type WithoutChildrenOrChild } from '$lib/utils/utils.js';
+	import { cn, type WithoutChildrenOrChild } from '$lib/utils.js';
 	import XIcon from '@lucide/svelte/icons/x';
 	import { Dialog as SheetPrimitive } from 'bits-ui';
 	import type { ComponentProps, Snippet } from 'svelte';

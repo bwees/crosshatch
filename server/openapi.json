@@ -323,11 +323,166 @@
           },
           "timeRemaining": {
             "type": "number"
+          },
+          "buildPlate": {
+            "type": "object",
+            "properties": {
+              "temperature": {
+                "type": "number"
+              },
+              "targetTemperature": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "temperature",
+              "targetTemperature"
+            ]
+          },
+          "nozzle": {
+            "type": "object",
+            "properties": {
+              "temperature": {
+                "type": "number"
+              },
+              "targetTemperature": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "temperature",
+              "targetTemperature"
+            ]
+          },
+          "chamber": {
+            "type": "object",
+            "properties": {
+              "temperature": {
+                "type": "number"
+              },
+              "targetTemperature": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "temperature",
+              "targetTemperature"
+            ]
+          },
+          "ams": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "number"
+                },
+                "humidity": {
+                  "type": "number"
+                },
+                "temperature": {
+                  "type": "number"
+                },
+                "trays": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "number"
+                      },
+                      "empty": {
+                        "type": "boolean"
+                      },
+                      "loaded": {
+                        "type": "boolean"
+                      },
+                      "material": {
+                        "type": "string"
+                      },
+                      "brand": {
+                        "type": "string"
+                      },
+                      "color": {
+                        "type": "string"
+                      },
+                      "kValue": {
+                        "type": "number"
+                      },
+                      "nozzleTempMin": {
+                        "type": "number"
+                      },
+                      "nozzleTempMax": {
+                        "type": "number"
+                      },
+                      "remaining": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "empty",
+                      "loaded"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "id",
+                "humidity",
+                "temperature",
+                "trays"
+              ]
+            }
+          },
+          "externalSpool": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "number"
+              },
+              "empty": {
+                "type": "boolean"
+              },
+              "loaded": {
+                "type": "boolean"
+              },
+              "material": {
+                "type": "string"
+              },
+              "brand": {
+                "type": "string"
+              },
+              "color": {
+                "type": "string"
+              },
+              "kValue": {
+                "type": "number"
+              },
+              "nozzleTempMin": {
+                "type": "number"
+              },
+              "nozzleTempMax": {
+                "type": "number"
+              },
+              "remaining": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "id",
+              "empty",
+              "loaded"
+            ]
           }
         },
         "required": [
           "state",
-          "progress"
+          "progress",
+          "buildPlate",
+          "nozzle",
+          "chamber",
+          "ams"
         ]
       }
     }
