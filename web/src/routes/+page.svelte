@@ -1,14 +1,25 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
+	import CreatePrinterDialog from '$lib/components/CreatePrinterDialog.svelte';
+	import { Button } from '$lib/components/ui/button/index.js';
 	import Card from '$lib/components/ui/card/card.svelte';
 	import { printerManager } from '$lib/managers/printers.manager.svelte';
-	import { Printer } from '@lucide/svelte';
+	import { Plus, Printer } from '@lucide/svelte';
+
+	let createDialogOpen = $state(false);
 </script>
 
 <svelte:head>
 	<title>Printers</title>
 </svelte:head>
+
+<div class="mb-4 flex items-center justify-between">
+	<h1 class="text-2xl font-bold">Printers</h1>
+	<Button size="icon" variant="outline" onclick={() => (createDialogOpen = true)}>
+		<Plus />
+	</Button>
+</div>
 
 <div class="lg-grid-cols-3 grid grid-cols-1 gap-4 md:grid-cols-2">
 	{#each printerManager.printers.entries() as [serial, printer] (serial)}
@@ -28,3 +39,5 @@
 		</Card>
 	{/each}
 </div>
+
+<CreatePrinterDialog bind:open={createDialogOpen} />

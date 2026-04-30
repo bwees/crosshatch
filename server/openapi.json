@@ -183,6 +183,70 @@
           "Printer"
         ]
       }
+    },
+    "/api/printer/{serial}/light": {
+      "post": {
+        "operationId": "setLight",
+        "parameters": [
+          {
+            "name": "serial",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetLightDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Printer"
+        ]
+      }
+    },
+    "/api/printer/{serial}/unload/{amsId}": {
+      "post": {
+        "operationId": "unloadMaterial",
+        "parameters": [
+          {
+            "name": "serial",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "amsId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Printer"
+        ]
+      }
     }
   },
   "info": {
@@ -231,6 +295,17 @@
             "type": "string"
           }
         }
+      },
+      "SetLightDto": {
+        "type": "object",
+        "properties": {
+          "state": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "state"
+        ]
       },
       "PrinterStatusDto": {
         "type": "object",
@@ -362,11 +437,15 @@
               },
               "targetTemperature": {
                 "type": "number"
+              },
+              "controllable": {
+                "type": "boolean"
               }
             },
             "required": [
               "temperature",
-              "targetTemperature"
+              "targetTemperature",
+              "controllable"
             ]
           },
           "ams": {
@@ -381,6 +460,9 @@
                   "type": "number"
                 },
                 "temperature": {
+                  "type": "number"
+                },
+                "dryingTime": {
                   "type": "number"
                 },
                 "trays": {
@@ -431,6 +513,7 @@
                 "id",
                 "humidity",
                 "temperature",
+                "dryingTime",
                 "trays"
               ]
             }
@@ -474,6 +557,9 @@
               "empty",
               "loaded"
             ]
+          },
+          "chamberLight": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -482,7 +568,8 @@
           "buildPlate",
           "nozzle",
           "chamber",
-          "ams"
+          "ams",
+          "chamberLight"
         ]
       }
     }

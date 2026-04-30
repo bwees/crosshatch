@@ -136,6 +136,8 @@ const BambuJobStageSchema = z
 const BambuAmsUnitSchema = z
   .object({
     humidity: coerceInt,
+    humidity_raw: coerceInt,
+    dry_time: coerceInt,
     temp: coerceNumber,
     id: coerceInt,
     tray: z.array(BambuAmsTraySchema),
@@ -459,6 +461,7 @@ export const BambuPrintStateSchema = z
     stg_cur: coerceInt,
     subtask_id: z.string(),
     subtask_name: z.string(),
+    support_chamber_temp_edit: z.boolean().optional(),
     task_id: z.string(),
     upgrade_state: BambuUpgradeStateSchema,
     upload: BambuUploadSchema,

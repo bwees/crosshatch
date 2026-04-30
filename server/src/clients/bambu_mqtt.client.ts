@@ -25,12 +25,16 @@ export class BambuMQTTClient {
 
   state: BambuPrintState | null = null;
 
-  private COMMAND_TOPIC: string;
-
   // MQTT topic for receiving printer reports
   get reportTopic() {
     return `device/${this.connectionConfig.serial}/report`;
   }
+
+  get commandTopic() {
+    return `device/${this.connectionConfig.serial}/request`;
+  }
+
+  commandSequence = 0;
 
   constructor(
     connection: PrinterConnectionConfig,
@@ -43,8 +47,6 @@ export class BambuMQTTClient {
     this.logger = logger;
     this.connectionConfig = connection;
     this.onStatusUpdate = onStatusUpdate;
-
-    this.COMMAND_TOPIC = `device/${this.connectionConfig.serial}/control`;
 
     this.client = mqtt.connect({
       host: connection.hostIp,
@@ -118,19 +120,17 @@ export class BambuMQTTClient {
     }) as BambuPrintState;
   }
 
-  private async sendCommand(payload: object): Promise<void> {
-    return new Promise((resolve, reject) => {
-      this.client.publish(
-        this.COMMAND_TOPIC,
-        JSON.stringify(payload),
-        (err) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve();
-          }
-        },
-      );
+  private async sendCommand(payload: Record<string, any>): Promise<void> {
+    for (const key of ['print', 'info', 'system'] as const) {
+      if (payload[key]) {
+        payload[key].sequence_id = (this.commandSequence++).toString();
+      }
+    }
+
+    this.client.publish(this.commandTopic, JSON.stringify(payload), (err) => {
+      if (err) {
+        this.logger.error('Failed to publish command to MQTT:', err);
+      }
     });
   }
 
@@ -156,5 +156,41 @@ export class BambuMQTTClient {
       `Sending resume command to printer ${this.connectionConfig.serial}`,
     );
     await this.sendCommand({ print: { command: 'resume' } });
+  }
+
+  async setLight(on: boolean): Promise<void> {
+    this.logger.debug(
+      `Sending light ${on ? 'on' : 'off'} command to printer ${
+        this.connectionConfig.serial
+      }`,
+    );
+
+    await this.sendCommand({
+      system: {
+        command: 'ledctrl',
+        led_node: 'chamber_light',
+        led_mode: on ? 'on' : 'off', // "on" | "off" | "flashing"
+        led_on_time: 500,
+        led_off_time: 500,
+        loop_times: 1,
+        interval_time: 1000,
+      },
+    });
+  }
+
+  async unloadMaterial(amsID: number): Promise<void> {
+    this.logger.debug(
+      `Sending unload material command to printer ${this.connectionConfig.serial}`,
+    );
+    await this.sendCommand({
+      print: {
+        command: 'ams_change_filament',
+        curr_temp: 255,
+        tar_temp: 255,
+        ams_id: amsID,
+        target: 255,
+        slot_id: 255,
+      },
+    });
   }
 }

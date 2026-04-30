@@ -124,6 +124,24 @@ export class PrinterService extends BaseService {
     await client.stopPrint();
   }
 
+  async unloadMaterial(serial: string, amsId: number): Promise<void> {
+    const client = this.mqttClients.get(serial);
+    if (!client) {
+      throw new Error(`MQTT client for printer ${serial} not found`);
+    }
+
+    await client.unloadMaterial(amsId);
+  }
+
+  async setLight(serial: string, on: boolean): Promise<void> {
+    const client = this.mqttClients.get(serial);
+    if (!client) {
+      throw new Error(`MQTT client for printer ${serial} not found`);
+    }
+
+    await client.setLight(on);
+  }
+
   async getPrinterState(serial: string): Promise<BambuPrintState | null> {
     const client = this.mqttClients.get(serial);
     if (!client) {

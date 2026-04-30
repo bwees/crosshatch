@@ -9,7 +9,7 @@ import {
   Post,
   Put,
 } from '@nestjs/common';
-import { PrinterDto, UpdatePrinterDto } from 'src/dtos/printer.dto';
+import { PrinterDto, SetLightDto, UpdatePrinterDto } from 'src/dtos/printer.dto';
 import { PrinterService } from 'src/services/printer.service';
 
 @Controller('api/printer')
@@ -57,5 +57,23 @@ export class PrinterController {
   @HttpCode(204)
   resumePrint(@Param('serial') serial: string): Promise<void> {
     return this.printerService.resumePrint(serial);
+  }
+
+  @Post(':serial/light')
+  @HttpCode(204)
+  setLight(
+    @Param('serial') serial: string,
+    @Body() dto: SetLightDto,
+  ): Promise<void> {
+    return this.printerService.setLight(serial, dto.state);
+  }
+
+  @Post(':serial/unload/:amsId')
+  @HttpCode(204)
+  unloadMaterial(
+    @Param('serial') serial: string,
+    @Param('amsId') amsId: string,
+  ): Promise<void> {
+    return this.printerService.unloadMaterial(serial, parseInt(amsId));
   }
 }

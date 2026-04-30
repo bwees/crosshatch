@@ -97,6 +97,7 @@ const AMSUnitSchema = z.object({
   id: z.number(),
   humidity: z.number(),
   temperature: z.number(),
+  dryingTime: z.number(),
   trays: z.array(AMSTraySchema),
 });
 
@@ -117,9 +118,11 @@ const PrinterStatusSchema = z.object({
   chamber: z.object({
     temperature: z.number(),
     targetTemperature: z.number(),
+    controllable: z.boolean(),
   }),
   ams: z.array(AMSUnitSchema),
   externalSpool: AMSTraySchema.optional(),
+  chamberLight: z.boolean(),
 });
 
 export class PrinterStatusDto extends createZodDto(PrinterStatusSchema) {}
@@ -144,10 +147,12 @@ export function statusFromMQTT(payload: BambuPrintState): PrinterStatusDto {
     chamber: {
       temperature: payload.device.ctc.info.temp & 0xffff,
       targetTemperature: (payload.device.ctc.info.temp >> 16) & 0xffff,
+      controllable: payload.support_chamber_temp_edit ?? false,
     },
     ams: payload.ams.ams.map((unit) => ({
       id: unit.id,
-      humidity: unit.humidity,
+      humidity: unit.humidity_raw,
+      dryingTime: unit.dry_time,
       temperature: unit.temp,
       trays: unit.tray.map((tray) => {
         const trayId = tray.id ?? 0;
@@ -178,5 +183,8 @@ export function statusFromMQTT(payload: BambuPrintState): PrinterStatusDto {
           remaining: payload.vir_slot[0].remain,
         }
       : undefined,
+    chamberLight:
+      payload.lights_report.find((light) => light.node === 'chamber_light')
+        ?.mode === 'on',
   };
 }

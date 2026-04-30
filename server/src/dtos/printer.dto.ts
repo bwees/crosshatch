@@ -12,3 +12,9 @@ export class PrinterDto extends createZodDto(PrinterSchema) {}
 export class UpdatePrinterDto extends createZodDto(
   PrinterSchema.partial().omit({ serial: true }),
 ) {}
+
+const SetLightSchema = z.object({
+  state: z.boolean(),
+});
+
+export class SetLightDto extends createZodDto(SetLightSchema) {}
