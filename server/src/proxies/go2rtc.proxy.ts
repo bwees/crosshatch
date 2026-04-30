@@ -4,7 +4,7 @@ import httpProxy from 'http-proxy';
 @Injectable()
 export class Go2RTCProxy implements OnModuleInit {
   private proxy = httpProxy.createProxyServer({
-    target: 'ws://localhost:1984',
+    target: process.env.GO2RTC_WS_URL ?? 'ws://localhost:1984',
     ws: true,
     changeOrigin: true,
   });

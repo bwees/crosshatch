@@ -7,9 +7,10 @@ export default defineConfig({
 	server: {
 		host: true,
 		allowedHosts: ['brandon-macbook-pro'],
+
 		proxy: {
 			'/api': {
-				target: 'http://127.0.0.1:3000/api',
+				target: process.env.API_PROXY_TARGET ?? 'http://127.0.0.1:3000/api',
 				ws: true,
 
 				changeOrigin: true,

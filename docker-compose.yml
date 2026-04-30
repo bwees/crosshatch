@@ -5,6 +5,38 @@ services:
       - "1984:1984"         # WebUI and API
       # - "8554:8554"         # RTSP
       - "8555:8555"         # webrtc
-    restart: unless-stopped  # autorestart on fail or config change from WebUI
+    restart: unless-stopped
     environment:
-      - TZ=America/Chicago  # timezone in logs
+      - TZ=America/Chicago
+
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    command: pnpm -F server dev
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - GO2RTC_WS_URL=ws://go2rtc:1984
+    env_file:
+      - ./server/.env
+    volumes:
+      - ./server:/app/server
+    depends_on:
+      - go2rtc
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    command: pnpm -F web dev --host 0.0.0.0
+    ports:
+      - "5173:5173"
+    environment:
+      - NODE_ENV=development
+      - API_PROXY_TARGET=http://server:3000/api
+    volumes:
+      - ./web:/app/web
+    depends_on:
+      - server

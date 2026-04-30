@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "pnpm --filter server dev & pnpm --filter web dev",
+    "dev": "docker compose up",
+    "dev:build": "docker compose up --build",
+    "dev:local": "pnpm --filter server dev & pnpm --filter web dev",
     "openapi": "pnpm --filter server openapi:spec && pnpm --filter web openapi:generate",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
