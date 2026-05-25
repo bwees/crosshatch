@@ -23,7 +23,7 @@ class PrinterManager {
 	async initialize() {
 		await this.refreshPrinters();
 
-		this.stateSocket = io(`http://${window.location.host}`, {
+		this.stateSocket = io({
 			path: '/api/ws',
 			transports: ['websocket']
 		});

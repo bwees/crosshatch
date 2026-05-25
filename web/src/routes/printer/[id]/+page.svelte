@@ -22,7 +22,7 @@
 <div class="grid h-full w-full grid-cols-1 place-items-start content-start gap-4 md:grid-cols-2">
 	<div class="flex w-full flex-col gap-4">
 		<Card class="w-full p-0">
-			<Go2RTCPlayer url={`ws://${page.url.host}/api/go2rtc?src=${printerSerial}`} />
+			<Go2RTCPlayer url={`/api/go2rtc?src=${printerSerial}`} />
 		</Card>
 		<ProgressCard {state} {printer} />
 	</div>

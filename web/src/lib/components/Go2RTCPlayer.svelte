@@ -55,7 +55,11 @@
 			}
 		}, 10000);
 
-		ws = new WebSocket(currentUrl);
+		const wsUrl = /^wss?:\/\//.test(currentUrl)
+			? currentUrl
+			: `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}${currentUrl.startsWith('/') ? '' : '/'}${currentUrl}`;
+
+		ws = new WebSocket(wsUrl);
 		ws.binaryType = 'arraybuffer';
 
 		let ondata: ((data: ArrayBuffer) => void) | null = null;
