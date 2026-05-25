@@ -14,14 +14,16 @@ type PrinterConnectionConfig = {
   serial: string;
 };
 
+type StatusUpdateHandler = (
+  serial: string,
+  status: BambuPrintState,
+) => MaybePromise<void>;
+
 export class BambuMQTTClient {
   private connectionConfig: PrinterConnectionConfig;
   private client: MqttClient;
   private readonly logger: Logger;
-  private onStatusUpdate: (
-    serial: string,
-    status: BambuPrintState,
-  ) => MaybePromise<void>;
+  private onStatusUpdate: StatusUpdateHandler;
 
   state: BambuPrintState | null = null;
 
@@ -38,10 +40,7 @@ export class BambuMQTTClient {
 
   constructor(
     connection: PrinterConnectionConfig,
-    onStatusUpdate: (
-      serial: string,
-      status: BambuPrintState,
-    ) => MaybePromise<void>,
+    onStatusUpdate: StatusUpdateHandler,
     logger: Logger = new Logger(`${BambuMQTTClient.name}-${connection.serial}`),
   ) {
     this.logger = logger;
