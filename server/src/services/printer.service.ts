@@ -174,6 +174,8 @@ export class PrinterService extends BaseService {
       );
       this.mqttClients.set(printer.serial, client);
     }
+
+    await this.syncCameraStreams();
   }
 
   async onModuleDestroy() {

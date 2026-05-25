@@ -1,8 +1,11 @@
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { SwaggerModule } from '@nestjs/swagger';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
+import type { NextFunction, Request, Response } from 'express';
 import { IncomingMessage } from 'http';
+import { join } from 'path';
 import { Duplex } from 'stream';
 import { AppModule } from './app.module';
 import { createOpenApiDocument } from './openapi';
@@ -10,12 +13,24 @@ import { Go2RTCProxy } from './proxies/go2rtc.proxy';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
   app.enableCors();
 
   const openApiDoc = createOpenApiDocument(app);
 
   SwaggerModule.setup('api', app, openApiDoc);
+
+  const webStaticPath = process.env.WEB_STATIC_PATH;
+  if (webStaticPath) {
+    const indexFile = join(webStaticPath, 'index.html');
+    app.useStaticAssets(webStaticPath, { index: false });
+    app.use((req: Request, res: Response, next: NextFunction) => {
+      if (req.method !== 'GET' && req.method !== 'HEAD') return next();
+      if (req.path.startsWith('/api')) return next();
+      res.sendFile(indexFile);
+    });
+    logger.log(`Serving static web assets from ${webStaticPath}`);
+  }
 
   const server = app.getHttpServer();
   const wsProxy = app.get(Go2RTCProxy);
@@ -23,7 +38,7 @@ async function bootstrap() {
   logger.log('Running database migrations...');
 
   migrate(app.get('db'), {
-    migrationsFolder: './src/db/migrations',
+    migrationsFolder: join(__dirname, 'db', 'migrations'),
   });
 
   logger.log('Database migrations completed.');

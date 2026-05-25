@@ -1,6 +1,6 @@
 import * as client from './client';
 
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://brandon-macbook-pro:5173';
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? '';
 
 client.defaults.baseUrl = apiBaseUrl;
 

@@ -1,8 +1,11 @@
 **/node_modules
 **/dist
 **/.svelte-kit
+web/build
 .git
 .vscode
 dev
 *.log
+server/data
 .DS_Store
+*.db
