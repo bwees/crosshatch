@@ -15,6 +15,7 @@ async function bootstrap() {
   const logger = new Logger('Bootstrap');
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   app.enableCors();
+  app.enableShutdownHooks();
 
   const openApiDoc = createOpenApiDocument(app);
 
@@ -51,7 +52,12 @@ async function bootstrap() {
 
   logger.log('WebSocket proxy for Go2RTC initialized');
 
-  await app.listen(process.env.PORT ?? 3000);
+  const port = process.env.PORT ?? 3000;
+  await app.listen(port);
+  logger.log(`Server is listening on port ${port}`);
 }
 
-void bootstrap();
+bootstrap().catch((error) => {
+  new Logger('Bootstrap').error('Failed to start the server', error);
+  process.exit(1);
+});

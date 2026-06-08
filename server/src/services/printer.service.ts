@@ -179,6 +179,9 @@ export class PrinterService extends BaseService {
   }
 
   async onModuleDestroy() {
+    this.logger.log(
+      `Disconnecting ${this.mqttClients.size} MQTT client(s) before shutdown`,
+    );
     for (const client of this.mqttClients.values()) {
       client.disconnect();
     }
