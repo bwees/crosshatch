@@ -4,13 +4,13 @@
 	import Card from '$lib/components/ui/card/card.svelte';
 	import Progress from '$lib/components/ui/progress/progress.svelte';
 	import Separator from '$lib/components/ui/separator/separator.svelte';
-	import type { PrinterDto, PrinterStatusDto } from '$lib/sdk';
+	import type { Printer, PrinterStatus } from '$lib/sdk';
 	import { stageMessage } from '$lib/utils/printer_status';
 	import { DateTime, Duration } from 'luxon';
 
 	type Props = {
-		printer: PrinterDto | undefined;
-		state: PrinterStatusDto | undefined;
+		printer: Printer | undefined;
+		state: PrinterStatus | undefined;
 	};
 
 	let { state, printer }: Props = $props();

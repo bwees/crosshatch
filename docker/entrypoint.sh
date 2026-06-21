@@ -2,15 +2,15 @@
 set -eu
 
 GO2RTC_BIN="${GO2RTC_BIN:-/usr/local/bin/go2rtc}"
-GO2RTC_CONFIG_DIR="${GO2RTC_CONFIG_DIR:-/app/server/data/go2rtc}"
-SERVER_ENTRY="${SERVER_ENTRY:-/app/server/dist/src/main.js}"
+GO2RTC_CONFIG_DIR="${GO2RTC_CONFIG_DIR:-/data/go2rtc}"
+SERVER_BIN="${SERVER_BIN:-/app/server/crosshatch}"
 
 mkdir -p "$GO2RTC_CONFIG_DIR"
 
 (cd "$GO2RTC_CONFIG_DIR" && exec "$GO2RTC_BIN") &
 GO2RTC_PID=$!
 
-(cd /app/server && exec node "$SERVER_ENTRY") &
+(cd /app/server && exec "$SERVER_BIN") &
 SERVER_PID=$!
 
 cleanup() {

@@ -3,12 +3,12 @@
 	import Card from '$lib/components/ui/card/card.svelte';
 	import Separator from '$lib/components/ui/separator/separator.svelte';
 	import Switch from '$lib/components/ui/switch/switch.svelte';
-	import { setLight, type PrinterDto, type PrinterStatusDto } from '$lib/sdk';
+	import { setLight, type Printer, type PrinterStatus } from '$lib/sdk';
 	import { LightbulbIcon } from '@lucide/svelte';
 
 	type Props = {
-		state: PrinterStatusDto | undefined;
-		printer: PrinterDto | undefined;
+		state: PrinterStatus | undefined;
+		printer: Printer | undefined;
 	};
 
 	let { state: printerState, printer }: Props = $props();
@@ -21,6 +21,7 @@
 	let chamberLightOn = $state(printerState?.chamberLight ?? false);
 
 	$effect(() => {
+		if (printer?.serial === undefined) return;
 		setLight(printer?.serial ?? '', { state: chamberLightOn });
 	});
 </script>

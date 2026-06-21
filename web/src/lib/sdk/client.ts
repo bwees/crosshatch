@@ -1,6 +1,6 @@
 /**
- * Crosshatch API
- * 1.0.0
+ * OpenAPI
+ * 0.0.1
  * DO NOT MODIFY - This file has been generated using oazapfts.
  * See https://www.npmjs.com/package/oazapfts
  */
@@ -12,133 +12,347 @@ export const defaults: Oazapfts.Defaults<Oazapfts.CustomHeaders> = {
 };
 const oazapfts = Oazapfts.runtime(defaults);
 export const servers = {};
-export type PrinterDto = {
-    serial: string;
-    name: string;
-    hostIp: string;
+export type Printer = {
     accessCode: string;
+    hostIp: string;
+    name: string;
+    serial: string;
 };
+export type HttpError = {
+    /** Human readable error message */
+    detail?: string;
+    errors?: {
+        /** Additional information about the error */
+        more?: {
+            [key: string]: any;
+        };
+        /** For example, name of the parameter that caused the error */
+        name?: string;
+        /** Human readable error message */
+        reason?: string;
+    }[];
+    instance?: string;
+    /** HTTP status code */
+    status?: number;
+    /** Short title of the error */
+    title?: string;
+    /** URL of the error type. Can be used to lookup the error in a documentation */
+    "type"?: string;
+};
+export type CreatePrinterDto = {
+    accessCode: string;
+    hostIp: string;
+    name: string;
+    serial: string;
+};
+export type UnknownInterface = any;
 export type UpdatePrinterDto = {
-    name?: string;
-    hostIp?: string;
     accessCode?: string;
+    hostIp?: string;
+    name?: string;
 };
 export type SetLightDto = {
-    state: boolean;
+    state?: boolean;
 };
-export type PrinterStatusDto = {
-    state: "IDLE" | "RUNNING" | "PAUSE" | "PREPARE" | "SLICING" | "FINISH" | "FAILED";
-    stage?: -1 | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 | 24 | 25 | 26 | 27 | 28 | 29 | 30 | 31 | 32 | 33 | 34 | 35 | 36 | 37 | 38 | 39 | 40 | 41 | 42 | 43 | 44 | 45 | 46 | 47 | 48 | 49 | 50 | 51 | 52 | 53 | 54 | 55 | 56 | 57 | 58 | 65;
-    progress: number;
-    fileName?: string;
-    timeRemaining?: number;
-    buildPlate: {
-        temperature: number;
-        targetTemperature: number;
-    };
-    nozzle: {
-        temperature: number;
-        targetTemperature: number;
-    };
-    chamber: {
-        temperature: number;
-        targetTemperature: number;
-        controllable: boolean;
-    };
+export type PrinterStatus = {
     ams: {
-        id: number;
-        humidity: number;
-        temperature: number;
         dryingTime: number;
+        humidity: number;
+        id: number;
+        temperature: number;
         trays: {
-            id: number;
-            empty: boolean;
-            loaded: boolean;
-            material?: string;
             brand?: string;
             color?: string;
+            empty: boolean;
+            id: number;
             kValue?: number;
-            nozzleTempMin?: number;
+            loaded: boolean;
+            material?: string;
             nozzleTempMax?: number;
+            nozzleTempMin?: number;
             remaining?: number;
         }[];
     }[];
-    externalSpool?: {
-        id: number;
-        empty: boolean;
-        loaded: boolean;
-        material?: string;
-        brand?: string;
-        color?: string;
-        kValue?: number;
-        nozzleTempMin?: number;
-        nozzleTempMax?: number;
-        remaining?: number;
+    buildPlate: {
+        targetTemperature: number;
+        temperature: number;
+    };
+    chamber: {
+        controllable: boolean;
+        targetTemperature: number;
+        temperature: number;
     };
     chamberLight: boolean;
+    externalSpool?: {
+        brand?: string;
+        color?: string;
+        empty: boolean;
+        id: number;
+        kValue?: number;
+        loaded: boolean;
+        material?: string;
+        nozzleTempMax?: number;
+        nozzleTempMin?: number;
+        remaining?: number;
+    };
+    fileName?: string;
+    nozzle: {
+        targetTemperature: number;
+        temperature: number;
+    };
+    progress: number;
+    stage?: number;
+    state: string;
+    timeRemaining?: number;
 };
-export function getPrinters(opts?: Oazapfts.RequestOpts) {
+/**
+ * func1
+ */
+export function getPrinters({ accept }: {
+    accept?: string;
+} = {}, opts?: Oazapfts.RequestOpts) {
     return oazapfts.ok(oazapfts.fetchJson<{
         status: 200;
-        data: PrinterDto[];
-    }>("/api/printer", {
-        ...opts
+        data: Printer[];
+    } | {
+        status: 400;
+        data: HttpError;
+    } | {
+        status: 500;
+        data: HttpError;
+    } | {
+        status: number;
+    }>("/api/printer/", {
+        ...opts,
+        headers: oazapfts.mergeHeaders(opts?.headers, {
+            Accept: accept
+        })
     }));
 }
-export function createPrinter(printerDto: PrinterDto, opts?: Oazapfts.RequestOpts) {
+/**
+ * func3
+ */
+export function createPrinter(createPrinterDto: CreatePrinterDto, { accept }: {
+    accept?: string;
+} = {}, opts?: Oazapfts.RequestOpts) {
     return oazapfts.ok(oazapfts.fetchJson<{
         status: 201;
-        data: PrinterDto;
-    }>("/api/printer", oazapfts.json({
+        data: Printer;
+    } | {
+        status: 400;
+        data: HttpError;
+    } | {
+        status: 500;
+        data: HttpError;
+    } | {
+        status: number;
+    }>("/api/printer/", oazapfts.json({
         ...opts,
         method: "PUT",
-        body: printerDto
+        body: createPrinterDto,
+        headers: oazapfts.mergeHeaders(opts?.headers, {
+            Accept: accept
+        })
     })));
 }
-export function deletePrinter(serial: string, opts?: Oazapfts.RequestOpts) {
-    return oazapfts.ok(oazapfts.fetchText(`/api/printer/${encodeURIComponent(serial)}`, {
+/**
+ * func5
+ */
+export function deletePrinter(serial: string, { accept }: {
+    accept?: string;
+} = {}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.ok(oazapfts.fetchJson<{
+        status: 204;
+        data: UnknownInterface;
+    } | {
+        status: 400;
+        data: HttpError;
+    } | {
+        status: 500;
+        data: HttpError;
+    } | {
+        status: number;
+    }>(`/api/printer/${encodeURIComponent(serial)}`, {
         ...opts,
-        method: "DELETE"
+        method: "DELETE",
+        headers: oazapfts.mergeHeaders(opts?.headers, {
+            Accept: accept
+        })
     }));
 }
-export function updatePrinter(serial: string, updatePrinterDto: UpdatePrinterDto, opts?: Oazapfts.RequestOpts) {
+/**
+ * func4
+ */
+export function updatePrinter(serial: string, updatePrinterDto: UpdatePrinterDto, { accept }: {
+    accept?: string;
+} = {}, opts?: Oazapfts.RequestOpts) {
     return oazapfts.ok(oazapfts.fetchJson<{
         status: 200;
-        data: PrinterDto;
+        data: Printer;
+    } | {
+        status: 400;
+        data: HttpError;
+    } | {
+        status: 500;
+        data: HttpError;
+    } | {
+        status: number;
     }>(`/api/printer/${encodeURIComponent(serial)}`, oazapfts.json({
         ...opts,
         method: "PATCH",
-        body: updatePrinterDto
+        body: updatePrinterDto,
+        headers: oazapfts.mergeHeaders(opts?.headers, {
+            Accept: accept
+        })
     })));
 }
-export function stopPrint(serial: string, opts?: Oazapfts.RequestOpts) {
-    return oazapfts.ok(oazapfts.fetchText(`/api/printer/${encodeURIComponent(serial)}/stop`, {
-        ...opts,
-        method: "POST"
-    }));
-}
-export function pausePrint(serial: string, opts?: Oazapfts.RequestOpts) {
-    return oazapfts.ok(oazapfts.fetchText(`/api/printer/${encodeURIComponent(serial)}/pause`, {
-        ...opts,
-        method: "POST"
-    }));
-}
-export function resumePrint(serial: string, opts?: Oazapfts.RequestOpts) {
-    return oazapfts.ok(oazapfts.fetchText(`/api/printer/${encodeURIComponent(serial)}/resume`, {
-        ...opts,
-        method: "POST"
-    }));
-}
-export function setLight(serial: string, setLightDto: SetLightDto, opts?: Oazapfts.RequestOpts) {
-    return oazapfts.ok(oazapfts.fetchText(`/api/printer/${encodeURIComponent(serial)}/light`, oazapfts.json({
+/**
+ * func9
+ */
+export function setLight(serial: string, setLightDto: SetLightDto, { accept }: {
+    accept?: string;
+} = {}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.ok(oazapfts.fetchJson<{
+        status: 204;
+        data: UnknownInterface;
+    } | {
+        status: 400;
+        data: HttpError;
+    } | {
+        status: 500;
+        data: HttpError;
+    } | {
+        status: number;
+    }>(`/api/printer/${encodeURIComponent(serial)}/light`, oazapfts.json({
         ...opts,
         method: "POST",
-        body: setLightDto
+        body: setLightDto,
+        headers: oazapfts.mergeHeaders(opts?.headers, {
+            Accept: accept
+        })
     })));
 }
-export function unloadMaterial(serial: string, amsId: string, opts?: Oazapfts.RequestOpts) {
-    return oazapfts.ok(oazapfts.fetchText(`/api/printer/${encodeURIComponent(serial)}/unload/${encodeURIComponent(amsId)}`, {
+/**
+ * func7
+ */
+export function pausePrint(serial: string, { accept }: {
+    accept?: string;
+} = {}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.ok(oazapfts.fetchJson<{
+        status: 204;
+        data: UnknownInterface;
+    } | {
+        status: 400;
+        data: HttpError;
+    } | {
+        status: 500;
+        data: HttpError;
+    } | {
+        status: number;
+    }>(`/api/printer/${encodeURIComponent(serial)}/pause`, {
         ...opts,
-        method: "POST"
+        method: "POST",
+        headers: oazapfts.mergeHeaders(opts?.headers, {
+            Accept: accept
+        })
+    }));
+}
+/**
+ * func8
+ */
+export function resumePrint(serial: string, { accept }: {
+    accept?: string;
+} = {}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.ok(oazapfts.fetchJson<{
+        status: 204;
+        data: UnknownInterface;
+    } | {
+        status: 400;
+        data: HttpError;
+    } | {
+        status: 500;
+        data: HttpError;
+    } | {
+        status: number;
+    }>(`/api/printer/${encodeURIComponent(serial)}/resume`, {
+        ...opts,
+        method: "POST",
+        headers: oazapfts.mergeHeaders(opts?.headers, {
+            Accept: accept
+        })
+    }));
+}
+/**
+ * func2
+ */
+export function getPrinterStatus(serial: string, { accept }: {
+    accept?: string;
+} = {}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.ok(oazapfts.fetchJson<{
+        status: 200;
+        data: PrinterStatus;
+    } | {
+        status: 400;
+        data: HttpError;
+    } | {
+        status: 500;
+        data: HttpError;
+    } | {
+        status: number;
+    }>(`/api/printer/${encodeURIComponent(serial)}/status`, {
+        ...opts,
+        headers: oazapfts.mergeHeaders(opts?.headers, {
+            Accept: accept
+        })
+    }));
+}
+/**
+ * func6
+ */
+export function stopPrint(serial: string, { accept }: {
+    accept?: string;
+} = {}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.ok(oazapfts.fetchJson<{
+        status: 204;
+        data: UnknownInterface;
+    } | {
+        status: 400;
+        data: HttpError;
+    } | {
+        status: 500;
+        data: HttpError;
+    } | {
+        status: number;
+    }>(`/api/printer/${encodeURIComponent(serial)}/stop`, {
+        ...opts,
+        method: "POST",
+        headers: oazapfts.mergeHeaders(opts?.headers, {
+            Accept: accept
+        })
+    }));
+}
+/**
+ * func10
+ */
+export function unloadMaterial(serial: string, amsId: string, { accept }: {
+    accept?: string;
+} = {}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.ok(oazapfts.fetchJson<{
+        status: 204;
+        data: UnknownInterface;
+    } | {
+        status: 400;
+        data: HttpError;
+    } | {
+        status: 500;
+        data: HttpError;
+    } | {
+        status: number;
+    }>(`/api/printer/${encodeURIComponent(serial)}/unload/${encodeURIComponent(amsId)}`, {
+        ...opts,
+        method: "POST",
+        headers: oazapfts.mergeHeaders(opts?.headers, {
+            Accept: accept
+        })
     }));
 }

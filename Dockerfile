@@ -1,57 +1,54 @@
 ARG NODE_VERSION=24
 ARG PNPM_VERSION=10.32.1
+ARG GO_VERSION=1.26
 ARG GO2RTC_IMAGE=alexxit/go2rtc:latest
 
-FROM node:${NODE_VERSION}-alpine AS base
+# ---- Web build (SvelteKit static) ----
+FROM node:${NODE_VERSION}-alpine AS web-base
 RUN apk add --no-cache libc6-compat
 ARG PNPM_VERSION
 RUN corepack enable && corepack prepare pnpm@${PNPM_VERSION} --activate
 WORKDIR /app
 
-FROM base AS build-deps
+FROM web-base AS web-deps
 RUN apk add --no-cache python3 make g++
-COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
-COPY server/package.json ./server/
-COPY web/package.json ./web/
+WORKDIR /app/web
+COPY web/package.json web/pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 
-FROM build-deps AS web-builder
-COPY web ./web
-RUN pnpm -F web build
+FROM web-deps AS web-builder
+COPY web ./
+RUN pnpm build
 
-FROM build-deps AS server-builder
-COPY server ./server
-RUN pnpm -F server build
+# ---- Go server build ----
+FROM golang:${GO_VERSION}-alpine AS server-builder
+# build-base provides the C toolchain for the CGO-based sqlite driver.
+RUN apk add --no-cache build-base
+WORKDIR /src
+COPY server/go.mod server/go.sum ./
+RUN go mod download
+COPY server/ ./
+RUN CGO_ENABLED=1 go build -trimpath -o /out/crosshatch .
 
-FROM base AS prod-deps
-RUN apk add --no-cache python3 make g++
-COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
-COPY server/package.json ./server/
-COPY web/package.json ./web/
-RUN pnpm install --frozen-lockfile --prod --filter server...
-
+# ---- go2rtc binary ----
 FROM ${GO2RTC_IMAGE} AS go2rtc
 
-FROM node:${NODE_VERSION}-alpine AS runtime
-RUN apk add --no-cache tini libc6-compat bash
+# ---- Runtime ----
+FROM alpine:3.20 AS runtime
+RUN apk add --no-cache tini bash ca-certificates libc6-compat
 WORKDIR /app
 
 COPY --from=go2rtc /usr/local/bin/go2rtc /usr/local/bin/go2rtc
-
-COPY --from=server-builder /app/server/dist ./server/dist
-COPY --from=server-builder /app/server/package.json ./server/package.json
-COPY --from=prod-deps /app/server/node_modules ./server/node_modules
-COPY --from=prod-deps /app/node_modules ./node_modules
-
+COPY --from=server-builder /out/crosshatch /app/server/crosshatch
 COPY --from=web-builder /app/web/build ./web
 
 COPY docker/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh && mkdir -p /config /data
 
-ENV NODE_ENV=production
 ENV PORT=3000
 ENV WEB_STATIC_PATH=/app/web
 ENV GO2RTC_WS_URL=ws://localhost:1984
+ENV DATABASE_URL=/data/crosshatch.db
 
 EXPOSE 3000 1984 8555
 
