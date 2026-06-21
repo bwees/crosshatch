@@ -1,6 +1,8 @@
 [tools]
 go = "1.26.4"
-"go:github.com/air-verse/air" = "latest"
+pnpm = "latest"
+node = "26.04"
+"air" = "latest"
 
 [tasks.dev]
 description = "Start the full dev stack with docker compose"
