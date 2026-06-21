@@ -12,9 +12,13 @@ export default defineConfig({
 			'/api': {
 				target: process.env.API_PROXY_TARGET ?? 'http://127.0.0.1:3000/api',
 				ws: true,
-
 				changeOrigin: true,
-				rewrite: (path) => path.replace(/^\/api/, '')
+				rewrite: (path) => path.replace(/^\/api/, ''),
+				configure: (proxy) => {
+					proxy.on('proxyRes', (proxyRes) => {
+						delete proxyRes.headers['trailer'];
+					});
+				}
 			}
 		}
 	}

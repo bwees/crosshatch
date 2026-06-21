@@ -1,6 +1,6 @@
-import type { PrinterStatusDto } from '$lib/sdk';
+import type { PrinterStatus } from '$lib/sdk';
 
-export function stateMessage(status: PrinterStatusDto['state'] | 'UNKNOWN') {
+export function stateMessage(status: PrinterStatus['state'] | 'UNKNOWN') {
 	switch (status) {
 		case 'IDLE':
 		case 'FINISH':
@@ -20,7 +20,7 @@ export function stateMessage(status: PrinterStatusDto['state'] | 'UNKNOWN') {
 	}
 }
 
-export function stateColor(status: PrinterStatusDto['state'] | 'UNKNOWN') {
+export function stateColor(status: PrinterStatus['state'] | 'UNKNOWN') {
 	switch (status) {
 		case 'IDLE':
 		case 'FINISH':

@@ -1,0 +1,284 @@
+package services
+
+import (
+	"context"
+	"crosshatch/internal/bambu"
+	"crosshatch/internal/database/models"
+	"crosshatch/internal/dtos"
+	"crosshatch/internal/repositories"
+	"crosshatch/internal/socketio"
+	"fmt"
+	"sync"
+
+	"go.uber.org/fx"
+)
+
+type PrinterService struct {
+	printerRepo *repositories.PrinterRepository
+	cameraRepo  *repositories.CameraRepository
+	socketio    *socketio.SocketIO
+
+	clientsMu sync.Mutex
+	clients   map[string]*bambu.BambuClient
+
+	statusMu    sync.RWMutex
+	statusCache map[string]dtos.PrinterStatus
+}
+
+func (s *PrinterService) GetPrinters() ([]models.Printer, error) {
+	return s.printerRepo.GetPrinters()
+}
+
+func (s *PrinterService) CreatePrinter(dto dtos.CreatePrinterDto) (*models.Printer, error) {
+	printer, err := s.printerRepo.CreatePrinter(dto)
+	if err != nil {
+		return nil, err
+	}
+
+	s.connectClient(*printer)
+	s.reconcileCameraStreams()
+
+	return printer, nil
+}
+
+func (s *PrinterService) UpdatePrinter(serial string, dto dtos.UpdatePrinterDto) (*models.Printer, error) {
+	existing, err := s.printerRepo.GetPrinterBySerial(serial)
+	if err != nil {
+		return nil, err
+	}
+	if existing == nil {
+		return nil, fmt.Errorf("printer with serial %s not found", serial)
+	}
+
+	updated, err := s.printerRepo.UpdatePrinter(serial, dto)
+	if err != nil {
+		return nil, err
+	}
+
+	s.reconcileCameraStreams()
+
+	return updated, nil
+}
+
+func (s *PrinterService) DeletePrinter(serial string) error {
+	if err := s.printerRepo.DeletePrinter(serial); err != nil {
+		return err
+	}
+
+	s.disconnectClient(serial)
+	s.reconcileCameraStreams()
+
+	return nil
+}
+
+// connectClient creates and registers a Bambu MQTT client for a printer,
+// replacing any existing client for the same serial.
+func (s *PrinterService) connectClient(printer models.Printer) {
+	client := bambu.NewBambuClient(printer.HostIP, printer.AccessCode, printer.Serial, s.onPrinterStatusUpdate)
+
+	s.clientsMu.Lock()
+	if existing, ok := s.clients[printer.Serial]; ok {
+		existing.Close()
+	}
+	s.clients[printer.Serial] = client
+	s.clientsMu.Unlock()
+}
+
+// disconnectClient closes and removes the Bambu MQTT client for a serial.
+func (s *PrinterService) disconnectClient(serial string) {
+	s.clientsMu.Lock()
+	client, ok := s.clients[serial]
+	delete(s.clients, serial)
+	s.clientsMu.Unlock()
+
+	if ok {
+		client.Close()
+	}
+}
+
+// client returns the Bambu MQTT client for a serial, or an error if no client
+// is registered (e.g. the printer does not exist).
+func (s *PrinterService) client(serial string) (*bambu.BambuClient, error) {
+	s.clientsMu.Lock()
+	client, ok := s.clients[serial]
+	s.clientsMu.Unlock()
+
+	if !ok {
+		return nil, fmt.Errorf("MQTT client for printer %s not found", serial)
+	}
+	return client, nil
+}
+
+func (s *PrinterService) StopPrint(serial string) error {
+	client, err := s.client(serial)
+	if err != nil {
+		return err
+	}
+	return client.StopPrint()
+}
+
+func (s *PrinterService) PausePrint(serial string) error {
+	client, err := s.client(serial)
+	if err != nil {
+		return err
+	}
+	return client.PausePrint()
+}
+
+func (s *PrinterService) ResumePrint(serial string) error {
+	client, err := s.client(serial)
+	if err != nil {
+		return err
+	}
+	return client.ResumePrint()
+}
+
+func (s *PrinterService) SetLight(serial string, on bool) error {
+	client, err := s.client(serial)
+	if err != nil {
+		return err
+	}
+	return client.SetLight(on)
+}
+
+func (s *PrinterService) UnloadMaterial(serial string, amsID int) error {
+	client, err := s.client(serial)
+	if err != nil {
+		return err
+	}
+	return client.UnloadMaterial(amsID)
+}
+
+// printerStatusPayload flattens the printer status alongside its serial, so the
+// emitted event matches the `{ serial, ...status }` shape the clients expect.
+type printerStatusPayload struct {
+	Serial string `json:"serial"`
+	dtos.PrinterStatus
+}
+
+// onPrinterStatusUpdate is handed to each Bambu client; it projects the merged
+// MQTT print state into a status DTO and broadcasts it.
+func (s *PrinterService) onPrinterStatusUpdate(serial string, state *dtos.BambuPrintState) {
+	s.BroadcastStatus(serial, dtos.StatusFromMQTT(state))
+}
+
+func (s *PrinterService) BroadcastStatus(serial string, status dtos.PrinterStatus) {
+	s.statusMu.Lock()
+	s.statusCache[serial] = status
+	s.statusMu.Unlock()
+
+	s.socketio.Emit("printer.status", printerStatusPayload{Serial: serial, PrinterStatus: status})
+}
+
+// GetStatus returns the latest known status for a printer, or an error if no
+// status has been received yet (e.g. the printer is offline or unknown).
+func (s *PrinterService) GetStatus(serial string) (*dtos.PrinterStatus, error) {
+	s.statusMu.RLock()
+	status, ok := s.statusCache[serial]
+	s.statusMu.RUnlock()
+
+	if !ok {
+		return nil, fmt.Errorf("no status available for printer %s", serial)
+	}
+	return &status, nil
+}
+
+func (s *PrinterService) replayStatus(emit socketio.EmitFunc) {
+	s.statusMu.RLock()
+	defer s.statusMu.RUnlock()
+	for serial, status := range s.statusCache {
+		emit("printer.status", printerStatusPayload{Serial: serial, PrinterStatus: status})
+	}
+}
+
+func (s *PrinterService) connectPrinterClients() {
+	printers, err := s.GetPrinters()
+	if err != nil {
+		fmt.Printf("Error fetching printers: %v\n", err)
+		return
+	}
+
+	for _, printer := range printers {
+		s.connectClient(printer)
+	}
+}
+
+func containsPrinter(printers []models.Printer, serial string) bool {
+	for _, printer := range printers {
+		if printer.Serial == serial {
+			return true
+		}
+	}
+	return false
+}
+
+func (s *PrinterService) reconcileCameraStreams() {
+	printers, err := s.GetPrinters()
+
+	fmt.Println("Reconciling camera streams with printers...")
+
+	if err != nil {
+		fmt.Printf("Error fetching printers for stream reconciliation: %v\n", err)
+		return
+	}
+
+	streams, err := s.cameraRepo.GetStreams()
+	if err != nil {
+		fmt.Printf("Error fetching camera streams for reconciliation: %v\n", err)
+		return
+	}
+
+	for _, printer := range printers {
+		stream, exists := streams[printer.Serial]
+		if !exists || stream.Producers[0].URL != printer.CameraURL() {
+			if exists {
+				if err := s.cameraRepo.UpdateStream(printer.Serial, printer.CameraURL()); err != nil {
+					fmt.Printf("Error updating stream for printer %s: %v\n", printer.Serial, err)
+				}
+			} else {
+				if err := s.cameraRepo.AddStream(printer.Serial, printer.CameraURL()); err != nil {
+					fmt.Printf("Error adding stream for printer %s: %v\n", printer.Serial, err)
+				}
+			}
+		}
+	}
+
+	for serial := range streams {
+		if !containsPrinter(printers, serial) {
+			if err := s.cameraRepo.DeleteStream(serial); err != nil {
+				fmt.Printf("Error deleting stream for printer %s: %v\n", serial, err)
+			}
+		}
+	}
+}
+
+func NewPrinterService(lc fx.Lifecycle, printerRepo *repositories.PrinterRepository, cameraRepo *repositories.CameraRepository, socket *socketio.SocketIO) *PrinterService {
+	svc := &PrinterService{
+		printerRepo: printerRepo,
+		cameraRepo:  cameraRepo,
+		socketio:    socket,
+		clients:     make(map[string]*bambu.BambuClient),
+		statusCache: make(map[string]dtos.PrinterStatus),
+	}
+
+	// Send each newly connected client the latest known status for every printer.
+	socket.OnConnect(svc.replayStatus)
+
+	lc.Append(fx.Hook{
+		OnStart: func(ctx context.Context) error {
+			go svc.connectPrinterClients()
+			go svc.reconcileCameraStreams()
+			return nil
+		},
+		OnStop: func(ctx context.Context) error {
+			svc.clientsMu.Lock()
+			defer svc.clientsMu.Unlock()
+			for _, client := range svc.clients {
+				client.Close()
+			}
+			return nil
+		},
+	})
+
+	return svc
+}

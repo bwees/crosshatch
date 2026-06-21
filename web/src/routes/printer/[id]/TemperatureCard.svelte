@@ -4,10 +4,10 @@
 	import PrinterNozzle from '$lib/components/icons/PrinterNozzle.svelte';
 	import Card from '$lib/components/ui/card/card.svelte';
 	import Separator from '$lib/components/ui/separator/separator.svelte';
-	import type { PrinterStatusDto } from '$lib/sdk';
+	import type { PrinterStatus } from '$lib/sdk';
 
 	type Props = {
-		state: PrinterStatusDto | undefined;
+		state: PrinterStatus | undefined;
 	};
 
 	let { state }: Props = $props();

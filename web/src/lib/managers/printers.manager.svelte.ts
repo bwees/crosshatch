@@ -1,4 +1,4 @@
-import { getPrinters, type PrinterDto, type PrinterStatusDto } from '$lib/sdk';
+import { getPrinters, type Printer, type PrinterStatus } from '$lib/sdk';
 import { io, type Socket } from 'socket.io-client';
 import { SvelteMap } from 'svelte/reactivity';
 import { BambuPrinterManager } from './bambu_printer.svelte';
@@ -7,8 +7,8 @@ class PrinterManager {
 	private stateSocket!: Socket;
 	private printerManagers: Map<string, BambuPrinterManager> = new Map();
 
-	printers: Map<string, PrinterDto> = new SvelteMap();
-	printerState: Map<string, PrinterStatusDto> = new SvelteMap();
+	printers: Map<string, Printer> = new SvelteMap();
+	printerState: Map<string, PrinterStatus> = new SvelteMap();
 
 	async refreshPrinters() {
 		const printers = await getPrinters();
@@ -35,7 +35,7 @@ class PrinterManager {
 		this.stateSocket.on('printer.status', (data) => this.handleMqttReport(JSON.parse(data)));
 	}
 
-	private handleMqttReport(data: PrinterStatusDto & { serial: string }) {
+	private handleMqttReport(data: PrinterStatus & { serial: string }) {
 		this.printerState.set(data.serial, data);
 	}
 }

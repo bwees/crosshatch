@@ -1,18 +1,18 @@
 <script lang="ts">
 	import Button from '$lib/components/ui/button/button.svelte';
 	import Card from '$lib/components/ui/card/card.svelte';
-	import { unloadMaterial, type PrinterDto, type PrinterStatusDto } from '$lib/sdk';
+	import { unloadMaterial, type Printer, type PrinterStatus } from '$lib/sdk';
 	import { cn } from '$lib/utils';
 	import { DropletIcon, SunIcon } from '@lucide/svelte';
 	import { Duration } from 'luxon';
 	import Separator from '../../../lib/components/ui/separator/separator.svelte';
 
-	type AMSUnit = PrinterStatusDto['ams'][number];
+	type AMSUnit = PrinterStatus['ams'][number];
 	type Tray = AMSUnit['trays'][number];
 
 	type Props = {
-		state: PrinterStatusDto | undefined;
-		printer: PrinterDto | undefined;
+		state: PrinterStatus | undefined;
+		printer: Printer | undefined;
 	};
 
 	let { state, printer }: Props = $props();
@@ -78,7 +78,7 @@
 			<p class="text-sm font-medium">{label}</p>
 			<div class="flex h-6 items-center gap-1.5 rounded-full bg-muted px-2 py-1">
 				{#if unit.dryingTime > 0}
-					{@const time = Duration.fromObject({ seconds: unit.dryingTime }).toFormat('h:mm')}
+					{@const time = Duration.fromObject({ minutes: unit.dryingTime }).toFormat('h:mm')}
 					<SunIcon class="size-4 text-yellow-500" />
 					<Separator orientation="vertical" />
 					<p>{time}</p>

@@ -1,2 +1,36 @@
 [tools]
 go = "1.26.4"
+"go:github.com/air-verse/air" = "latest"
+
+[tasks.dev]
+description = "Start the full dev stack with docker compose"
+run = "docker compose up"
+
+[tasks."dev:build"]
+description = "Start the dev stack, rebuilding images"
+run = "docker compose up --build"
+
+[tasks."dev:server"]
+description = "Run the Go server with live reload"
+dir = "server"
+run = "air"
+
+[tasks."dev:web"]
+description = "Run the web dev server"
+dir = "web"
+run = "pnpm dev"
+
+[tasks."dev:local"]
+description = "Run the server and web dev servers together (no docker)"
+depends = ["dev:server", "dev:web"]
+
+[tasks."openapi:export"]
+description = "Generate the OpenAPI spec from the Go server"
+dir = "server"
+run = "go run . -open-api"
+
+[tasks.openapi]
+description = "Export the OpenAPI spec and regenerate the web SDK client"
+depends = ["openapi:export"]
+dir = "web"
+run = "pnpm openapi:generate"

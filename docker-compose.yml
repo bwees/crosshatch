@@ -11,18 +11,18 @@ services:
 
   server:
     build:
-      context: .
+      context: ./server
       dockerfile: Dockerfile.dev
-    command: pnpm -F server dev
     ports:
       - "3000:3000"
     environment:
-      - NODE_ENV=development
+      - PORT=3000
       - GO2RTC_WS_URL=ws://go2rtc:1984
-    env_file:
-      - ./server/.env
+      - GO2RTC_API_URL=http://go2rtc:1984
     volumes:
       - ./server:/app/server
+      - go-build-cache:/root/.cache/go-build
+      - go-mod-cache:/go/pkg/mod
     depends_on:
       - go2rtc
 
@@ -30,7 +30,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.dev
-    command: pnpm -F web dev --host 0.0.0.0
+    command: pnpm dev --host 0.0.0.0
     ports:
       - "5173:5173"
     environment:
@@ -38,5 +38,11 @@ services:
       - API_PROXY_TARGET=http://server:3000/api
     volumes:
       - ./web:/app/web
+      # Keep the container's Linux-built node_modules instead of the host's.
+      - /app/web/node_modules
     depends_on:
       - server
+
+volumes:
+  go-build-cache:
+  go-mod-cache:

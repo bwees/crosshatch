@@ -5,7 +5,10 @@ web/build
 .git
 .vscode
 dev
+server-old
 *.log
+server/tmp
 server/data
+server/crosshatch
 .DS_Store
 *.db
