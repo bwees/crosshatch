@@ -1,7 +1,7 @@
 [tools]
 go = "1.26.4"
 pnpm = "latest"
-node = "26.04"
+node = "24.17"
 "air" = "latest"
 
 [tasks.dev]
