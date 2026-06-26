@@ -5,8 +5,8 @@ import (
 
 	"crosshatch/internal/database/models"
 
+	"github.com/glebarez/sqlite"
 	"go.uber.org/fx"
-	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
@@ -20,11 +20,6 @@ func NewDatabase() *gorm.DB {
 	if err != nil {
 		panic("failed to connect database")
 	}
-
-	// err = db.Migrator().RenameTable("printers", &models.Printer{})
-	// if err != nil {
-	// 	panic("failed to rename table: " + err.Error())
-	// }
 
 	db.AutoMigrate(&models.Printer{})
 

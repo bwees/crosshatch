@@ -1,0 +1,62 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+version: 2
+
+project_name: crosshatch
+
+before:
+  hooks:
+    # web build
+    - pnpm -C web install --frozen-lockfile
+    - pnpm -C web build
+
+builds:
+  - id: crosshatch
+    dir: server
+    main: .
+    binary: crosshatch
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+
+dockers_v2:
+  - id: crosshatch
+    ids:
+      - crosshatch
+    images:
+      - ghcr.io/bwees/crosshatch
+    tags:
+      - "{{ .Version }}"
+      - latest
+    platforms:
+      - linux/amd64
+      - linux/arm64
+    dockerfile: Dockerfile
+    # The web build (built in CI) and the entrypoint are not Go artifacts,
+    # so they have to be copied into the build context explicitly.
+    extra_files:
+      - web/build
+      - docker/entrypoint.sh
+    labels:
+      org.opencontainers.image.title: "{{ .ProjectName }}"
+      org.opencontainers.image.source: "https://github.com/bwees/crosshatch"
+    annotations:
+      org.opencontainers.image.version: "{{ .Version }}"
+      org.opencontainers.image.revision: "{{ .FullCommit }}"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+
+release:
+  draft: true
+  footer: ""

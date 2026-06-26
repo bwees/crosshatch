@@ -3,6 +3,7 @@ go = "1.26.4"
 pnpm = "latest"
 node = "24.17"
 "air" = "latest"
+goreleaser = "latest"
 
 [tasks.dev]
 description = "Start the full dev stack with docker compose"
