@@ -58,5 +58,4 @@ changelog:
       - "^chore:"
 
 release:
-  draft: true
   footer: ""
