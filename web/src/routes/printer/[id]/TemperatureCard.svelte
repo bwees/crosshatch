@@ -4,6 +4,7 @@
 	import PrinterNozzle from '$lib/components/icons/PrinterNozzle.svelte';
 	import Card from '$lib/components/ui/card/card.svelte';
 	import type { PrinterStatus } from '$lib/sdk';
+	import { cn } from '$lib/utils';
 
 	type Props = {
 		state: PrinterStatus | undefined;
@@ -12,36 +13,38 @@
 	let { state }: Props = $props();
 
 	const cellClass =
-		'flex min-w-0 flex-col items-center justify-center gap-1 px-1 py-2 font-mono text-muted-foreground lg:flex-row lg:justify-start lg:gap-2 lg:px-3';
-	const valueClass = 'text-sm whitespace-nowrap sm:text-base lg:text-lg';
+		'flex min-w-0 flex-col items-center justify-center gap-1 px-1 py-2 font-mono text-muted-foreground sm:flex-row sm:gap-3 sm:px-4';
+	const iconClass = 'size-6 shrink-0 sm:size-8';
+	const valueClass = 'text-base sm:text-xl lg:text-2xl';
+	const unitClass = 'whitespace-nowrap';
 </script>
 
-<Card class="w-full gap-0 p-4 lg:w-1/3">
-	<div class="grid grid-cols-3 divide-x divide-border lg:grid-cols-1 lg:divide-x-0 lg:divide-y">
+<Card class="w-full gap-0 p-2">
+	<div class="grid grid-cols-3 divide-x divide-border">
 		<div class={cellClass}>
-			<PrinterNozzle class="size-5 shrink-0 sm:size-6" />
+			<PrinterNozzle class={cn(iconClass, 'mt-2')} />
 			<span class={valueClass}>
 				<span class="font-bold text-foreground">{state?.nozzle.temperature ?? '--'}</span>
-				<span> / {state?.nozzle.targetTemperature ?? '--'} °C</span>
+				<span class={unitClass}> / {state?.nozzle.targetTemperature ?? '--'} °C</span>
 			</span>
 		</div>
 
 		<div class={cellClass}>
-			<PrinterBuildPlate class="size-5 shrink-0 sm:size-6" />
+			<PrinterBuildPlate class={cn(iconClass, 'mb-1.5')} />
 			<span class={valueClass}>
 				<span class="font-bold text-foreground">{state?.buildPlate.temperature ?? '--'}</span>
-				<span> / {state?.buildPlate.targetTemperature ?? '--'} °C</span>
+				<span class={unitClass}> / {state?.buildPlate.targetTemperature ?? '--'} °C</span>
 			</span>
 		</div>
 
 		<div class={cellClass}>
-			<PrinterChamber class="size-5 shrink-0 sm:size-6" />
+			<PrinterChamber class={cn(iconClass, 'sm:size-7')} />
 			<span class={valueClass}>
 				<span class="font-bold text-foreground">{state?.chamber.temperature ?? '--'}</span>
 				{#if state?.chamber.controllable}
-					<span> / {state?.chamber.targetTemperature ?? '--'} °C</span>
+					<span class={unitClass}> / {state?.chamber.targetTemperature ?? '--'} °C</span>
 				{:else}
-					<span> °C</span>
+					<span class={unitClass}> °C</span>
 				{/if}
 			</span>
 		</div>
