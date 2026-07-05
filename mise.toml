@@ -37,3 +37,17 @@ description = "Export the OpenAPI spec and regenerate the web SDK client"
 depends = ["openapi:export"]
 dir = "web"
 run = "pnpm openapi:generate"
+
+[tasks."format:server"]
+description = "Format the Go server codebase"
+dir = "server"
+run = "gofmt -w ."
+
+[tasks."format:web"]
+description = "Format the web codebase"
+dir = "web"
+run = "pnpm format"
+
+[tasks.format]
+description = "Format the server and web codebases"
+depends = ["format:server", "format:web"]

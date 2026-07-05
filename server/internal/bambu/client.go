@@ -1,8 +1,8 @@
 package bambu
 
 import (
-	"crypto/tls"
 	"crosshatch/internal/dtos"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"math"
