@@ -1,6 +1,9 @@
 package dtos
 
-import "strconv"
+import (
+	"math"
+	"strconv"
+)
 
 // PrinterStage mirrors the numeric stage codes reported by the printer.
 type PrinterStage int
@@ -37,6 +40,12 @@ type AMSUnit struct {
 	Trays       []AMSTray `json:"trays" validate:"required"`
 }
 
+type FanStatus struct {
+	Part    int `json:"part" validate:"required"`
+	Aux     int `json:"aux" validate:"required"`
+	Chamber int `json:"chamber" validate:"required"`
+}
+
 type PrinterStatus struct {
 	State         string        `json:"state" validate:"required"`
 	Stage         *PrinterStage `json:"stage,omitempty"`
@@ -50,6 +59,7 @@ type PrinterStatus struct {
 	ExternalSpool *AMSTray      `json:"externalSpool,omitempty"`
 	ChamberLight  bool          `json:"chamberLight" validate:"required"`
 	SpeedLevel    *int          `json:"speedLevel,omitempty"`
+	Fans          FanStatus     `json:"fans" validate:"required"`
 }
 
 func StatusFromMQTT(s *BambuPrintState) PrinterStatus {
@@ -64,6 +74,11 @@ func StatusFromMQTT(s *BambuPrintState) PrinterStatus {
 		Nozzle:       Temperature{Temperature: float64(s.NozzleTemper), TargetTemperature: float64(s.NozzleTargetTemper)},
 		AMS:          []AMSUnit{},
 		ChamberLight: chamberLightOn(s.LightsReport),
+		Fans: FanStatus{
+			Part:    fanPercent(s.CoolingFanSpeed),
+			Aux:     fanPercent(s.BigFan1Speed),
+			Chamber: fanPercent(s.BigFan2Speed),
+		},
 	}
 
 	if s.SpdLvl != nil {
@@ -159,6 +174,12 @@ func trayFromMQTT(tray BambuTray, id int, loaded bool) AMSTray {
 		result.Remaining = &v
 	}
 	return result
+}
+
+// fanPercent converts a Bambu fan gear reading (0-15) into a 0-100 percentage.
+func fanPercent(raw Number) int {
+	pct := int(math.Round(float64(raw) / 15.0 * 100.0))
+	return min(max(pct, 0), 100)
 }
 
 func chamberLightOn(lights []BambuLight) bool {

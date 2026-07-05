@@ -5,11 +5,19 @@ import (
 	"crosshatch/internal/dtos"
 	"encoding/json"
 	"fmt"
+	"math"
 	"strconv"
 	"sync"
 	"sync/atomic"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
+)
+
+// Fan node ids as used by the M106 P<fan> gcode.
+const (
+	FanPart    = 1
+	FanAux     = 2
+	FanChamber = 3
 )
 
 // StatusUpdateHandler is invoked with the latest merged print state whenever a
@@ -157,6 +165,20 @@ func (c *BambuClient) SetPrintSpeed(level int) error {
 		"print": map[string]any{
 			"command": "print_speed",
 			"param":   strconv.Itoa(level),
+		},
+	})
+}
+
+// SetFanSpeed sets a fan (FanPart/FanAux/FanChamber) to a 0-100 percentage,
+// issued as an M106 gcode line with the 0-255 duty cycle Bambu expects.
+func (c *BambuClient) SetFanSpeed(fan int, percent int) error {
+	duty := int(math.Round(float64(percent) / 100.0 * 255.0))
+	duty = min(max(duty, 0), 255)
+
+	return c.sendCommand(map[string]any{
+		"print": map[string]any{
+			"command": "gcode_line",
+			"param":   fmt.Sprintf("M106 P%d S%d\n", fan, duty),
 		},
 	})
 }

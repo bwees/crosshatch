@@ -20,3 +20,8 @@ type SetLightDto struct {
 type SetPrintSpeedDto struct {
 	Level int `json:"level" validate:"required"`
 }
+
+type SetFanDto struct {
+	Fan   string `json:"fan" validate:"required"`
+	Speed int    `json:"speed"`
+}

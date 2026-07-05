@@ -157,6 +157,24 @@ func (s *PrinterService) SetPrintSpeed(serial string, level int) error {
 	return client.SetPrintSpeed(level)
 }
 
+var fanNodes = map[string]int{
+	"part":    bambu.FanPart,
+	"aux":     bambu.FanAux,
+	"chamber": bambu.FanChamber,
+}
+
+func (s *PrinterService) SetFan(serial string, fan string, speed int) error {
+	node, ok := fanNodes[fan]
+	if !ok {
+		return fmt.Errorf("unknown fan %q", fan)
+	}
+	client, err := s.client(serial)
+	if err != nil {
+		return err
+	}
+	return client.SetFanSpeed(node, speed)
+}
+
 // printerStatusPayload flattens the printer status alongside its serial, so the
 // emitted event matches the `{ serial, ...status }` shape the clients expect.
 type printerStatusPayload struct {

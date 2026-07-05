@@ -85,6 +85,38 @@ func TestCoercionAndProjection(t *testing.T) {
 	}
 }
 
+func TestFanAndSpeedProjection(t *testing.T) {
+	// Fan gears arrive as numeric strings on a 0-15 scale; spd_lvl as a number.
+	state := decode(t, nil, `{"print":{
+		"gcode_state":"RUNNING",
+		"spd_lvl":3,
+		"cooling_fan_speed":"15",
+		"big_fan1_speed":"8",
+		"big_fan2_speed":"0"
+	}}`)
+
+	s := StatusFromMQTT(state)
+
+	if s.SpeedLevel == nil || *s.SpeedLevel != 3 {
+		t.Fatalf("speedLevel: %+v", s.SpeedLevel)
+	}
+	// 15/15 -> 100, 8/15 -> 53, 0 -> 0
+	if s.Fans.Part != 100 || s.Fans.Aux != 53 || s.Fans.Chamber != 0 {
+		t.Fatalf("fans: %+v", s.Fans)
+	}
+}
+
+func TestSpeedLevelOmittedWhenAbsent(t *testing.T) {
+	state := decode(t, nil, `{"print":{"gcode_state":"IDLE"}}`)
+	s := StatusFromMQTT(state)
+	if s.SpeedLevel != nil {
+		t.Fatalf("speedLevel should be nil when absent: %+v", s.SpeedLevel)
+	}
+	if s.Fans.Part != 0 || s.Fans.Aux != 0 || s.Fans.Chamber != 0 {
+		t.Fatalf("fans should default to zero: %+v", s.Fans)
+	}
+}
+
 func TestPartialMergePreservesAndReplaces(t *testing.T) {
 	state := decode(t, nil, `{"print":{
 		"gcode_state":"RUNNING",

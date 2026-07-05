@@ -4,7 +4,8 @@
 	import Separator from '$lib/components/ui/separator/separator.svelte';
 	import Switch from '$lib/components/ui/switch/switch.svelte';
 	import { setLight, setPrintSpeed, type Printer, type PrinterStatus } from '$lib/sdk';
-	import { LightbulbIcon, RabbitIcon } from '@lucide/svelte';
+	import { FanIcon, LightbulbIcon, RabbitIcon } from '@lucide/svelte';
+	import FanControl from './FanControl.svelte';
 
 	type Props = {
 		state: PrinterStatus | undefined;
@@ -60,6 +61,16 @@
 			Light
 		</p>
 		<Switch size="lg" bind:checked={chamberLightOn} onCheckedChange={toggleLight} />
+	</div>
+
+	<Separator />
+
+	<div class="flex flex-col gap-2">
+		<p class="flex items-center gap-2">
+			<FanIcon class="size-5" />
+			Fans
+		</p>
+		<FanControl state={printerState} {printer} />
 	</div>
 
 	<Separator />
