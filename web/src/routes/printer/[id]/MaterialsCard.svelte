@@ -6,6 +6,7 @@
 	import { DropletIcon, SunIcon } from '@lucide/svelte';
 	import { Duration } from 'luxon';
 	import Separator from '../../../lib/components/ui/separator/separator.svelte';
+	import DryingDialog from './DryingDialog.svelte';
 	import FilamentDialog from './FilamentDialog.svelte';
 
 	type AMSUnit = PrinterStatus['ams'][number];
@@ -28,6 +29,16 @@
 		target = { amsId, trayId, label, tray };
 		dialogOpen = true;
 	}
+
+	let dryingDialogOpen = $state(false);
+	let dryingTarget = $state<{ amsId: number; label: string }>();
+
+	function openDrying(amsId: number, label: string) {
+		dryingTarget = { amsId, label };
+		dryingDialogOpen = true;
+	}
+
+	let dryingUnit = $derived(ams.find((unit) => unit.id === dryingTarget?.amsId));
 
 	let currentlyLoadedUnitID = $derived(
 		ams.find((unit) => unit.trays.some((tray) => tray.loaded))?.id ??
@@ -92,22 +103,46 @@
 	/>
 {/if}
 
+{#if dryingTarget}
+	<DryingDialog
+		bind:open={dryingDialogOpen}
+		{printer}
+		amsId={dryingTarget.amsId}
+		label={dryingTarget.label}
+		unit={dryingUnit}
+	/>
+{/if}
+
+{#snippet humidityCapsule(unit: AMSUnit)}
+	{#if unit.dryingTime > 0}
+		{@const time = Duration.fromObject({ minutes: unit.dryingTime }).toFormat('h:mm')}
+		<SunIcon class="size-4 text-yellow-500" />
+		<Separator orientation="vertical" />
+		<p>{time}</p>
+	{:else}
+		<DropletIcon class="size-4 text-blue-500" />
+		<Separator orientation="vertical" />
+		<p>{unit.humidity}%</p>
+	{/if}
+{/snippet}
+
 {#snippet amsUnit(unit: AMSUnit, label: string)}
 	<div class="flex w-full flex-col gap-2 rounded-lg border border-foreground/10 p-2">
 		<div class="flex items-center justify-between">
 			<p class="text-sm font-medium">{label}</p>
-			<div class="flex h-6 items-center gap-1.5 rounded-full bg-muted px-2 py-1">
-				{#if unit.dryingTime > 0}
-					{@const time = Duration.fromObject({ minutes: unit.dryingTime }).toFormat('h:mm')}
-					<SunIcon class="size-4 text-yellow-500" />
-					<Separator orientation="vertical" />
-					<p>{time}</p>
-				{:else}
-					<DropletIcon class="size-4 text-blue-500" />
-					<Separator orientation="vertical" />
-					<p>{unit.humidity}%</p>
-				{/if}
-			</div>
+			{#if unit.supportsDrying}
+				<button
+					type="button"
+					onclick={() => openDrying(unit.id, label)}
+					class="flex h-6 cursor-pointer items-center gap-1.5 rounded-full bg-muted px-2 py-1 transition hover:ring-2 hover:ring-ring focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+				>
+					{@render humidityCapsule(unit)}
+				</button>
+			{:else}
+				<div class="flex h-6 items-center gap-1.5 rounded-full bg-muted px-2 py-1">
+					{@render humidityCapsule(unit)}
+				</div>
+			{/if}
 		</div>
 		<div class="grid grid-cols-4 gap-2">
 			{#each unit.trays as tray, i (tray.id)}

@@ -20,6 +20,12 @@ const (
 	FanChamber = 3
 )
 
+// AMS drying control modes, matching BambuStudio's DevAms::DryCtrlMode.
+const (
+	DryModeOff    = 0
+	DryModeOnTime = 1
+)
+
 // StatusUpdateHandler is invoked with the latest merged print state whenever a
 // report message containing a "print" payload is received.
 type StatusUpdateHandler func(serial string, state *dtos.BambuPrintState)
@@ -197,6 +203,44 @@ func (c *BambuClient) SetFilament(amsID, trayID int, trayInfoIdx, trayColor, tra
 			"nozzle_temp_max": nozzleTempMax,
 			"tray_type":       trayType,
 			"setting_id":      "",
+		},
+	})
+}
+
+// StartDrying begins a timed drying cycle on an AMS unit. temp is the target
+// temperature in °C, duration is in hours, and coolingTemp is the temperature
+// the unit cools to afterwards. Only AMS 2 Pro / AMS HT units support this.
+func (c *BambuClient) StartDrying(amsID, temp, durationHours, coolingTemp int, filament string, rotateTray bool) error {
+	return c.sendCommand(map[string]any{
+		"print": map[string]any{
+			"command":              "ams_filament_drying",
+			"ams_id":               amsID,
+			"mode":                 DryModeOnTime,
+			"filament":             filament,
+			"temp":                 temp,
+			"duration":             durationHours,
+			"humidity":             0,
+			"rotate_tray":          rotateTray,
+			"cooling_temp":         coolingTemp,
+			"close_power_conflict": false,
+		},
+	})
+}
+
+// StopDrying ends an in-progress drying cycle on an AMS unit.
+func (c *BambuClient) StopDrying(amsID int) error {
+	return c.sendCommand(map[string]any{
+		"print": map[string]any{
+			"command":              "ams_filament_drying",
+			"ams_id":               amsID,
+			"mode":                 DryModeOff,
+			"filament":             "",
+			"temp":                 0,
+			"duration":             0,
+			"humidity":             0,
+			"rotate_tray":          false,
+			"cooling_temp":         0,
+			"close_power_conflict": false,
 		},
 	})
 }

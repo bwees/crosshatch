@@ -123,6 +123,32 @@ func (c *PrinterController) Register(api *fuego.Server) {
 		fuego.OptionDefaultStatusCode(204),
 	)
 
+	fuego.Post(route, "/{serial}/ams/{amsId}/dry", func(ctx fuego.ContextWithBody[dtos.StartDryingDto]) (any, error) {
+		dto, err := ctx.Body()
+		if err != nil {
+			return nil, err
+		}
+		amsID, err := strconv.Atoi(ctx.PathParam("amsId"))
+		if err != nil {
+			return nil, err
+		}
+		return nil, c.svc.StartDrying(ctx.PathParam("serial"), amsID, dto)
+	},
+		fuego.OptionOperationID("startDrying"),
+		fuego.OptionDefaultStatusCode(204),
+	)
+
+	fuego.Post(route, "/{serial}/ams/{amsId}/dry/stop", func(ctx fuego.ContextNoBody) (any, error) {
+		amsID, err := strconv.Atoi(ctx.PathParam("amsId"))
+		if err != nil {
+			return nil, err
+		}
+		return nil, c.svc.StopDrying(ctx.PathParam("serial"), amsID)
+	},
+		fuego.OptionOperationID("stopDrying"),
+		fuego.OptionDefaultStatusCode(204),
+	)
+
 	fuego.Post(route, "/{serial}/unload/{amsId}", func(ctx fuego.ContextNoBody) (any, error) {
 		amsID, err := strconv.Atoi(ctx.PathParam("amsId"))
 		if err != nil {

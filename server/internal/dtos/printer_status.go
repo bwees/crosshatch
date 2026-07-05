@@ -34,11 +34,13 @@ type AMSTray struct {
 }
 
 type AMSUnit struct {
-	ID          int       `json:"id" validate:"required"`
-	Humidity    float64   `json:"humidity" validate:"required"`
-	Temperature float64   `json:"temperature" validate:"required"`
-	DryingTime  float64   `json:"dryingTime" validate:"required"`
-	Trays       []AMSTray `json:"trays" validate:"required"`
+	ID             int       `json:"id" validate:"required"`
+	Humidity       float64   `json:"humidity" validate:"required"`
+	Temperature    float64   `json:"temperature" validate:"required"`
+	DryingTime     float64   `json:"dryingTime" validate:"required"`
+	SupportsDrying bool      `json:"supportsDrying" validate:"required"`
+	Drying         bool      `json:"drying" validate:"required"`
+	Trays          []AMSTray `json:"trays" validate:"required"`
 }
 
 type FanStatus struct {
@@ -111,14 +113,23 @@ func StatusFromMQTT(s *BambuPrintState) PrinterStatus {
 		Controllable:      s.SupportChamberTempEdit,
 	}
 
+	// Bit 5 of the fun2 feature mask advertises firmware support for remote drying.
+	supportRemoteDry := flagBits(s.Fun2, 5, 1) == 1
+
 	for _, unit := range s.AMS.AMS {
 		unitID := int(unit.ID)
+		// The AMS info hex packs the hardware model in bits [0,4) and the live
+		// drying state in bits [4,8). Only AMS 2 Pro (3) and AMS HT (4) can dry.
+		amsType := flagBits(unit.Info, 0, 4)
+		dryStatus := flagBits(unit.Info, 4, 4)
 		amsUnit := AMSUnit{
-			ID:          unitID,
-			Humidity:    float64(unit.HumidityRaw),
-			Temperature: float64(unit.Temp),
-			DryingTime:  float64(unit.DryTime),
-			Trays:       []AMSTray{},
+			ID:             unitID,
+			Humidity:       float64(unit.HumidityRaw),
+			Temperature:    float64(unit.Temp),
+			DryingTime:     float64(unit.DryTime),
+			SupportsDrying: supportRemoteDry && (amsType == 3 || amsType == 4),
+			Drying:         isDrying(dryStatus),
+			Trays:          []AMSTray{},
 		}
 		for _, tray := range unit.Tray {
 			trayID := 0
@@ -185,6 +196,31 @@ func trayFromMQTT(tray BambuTray, id int, loaded bool) AMSTray {
 func fanPercent(raw Number) int {
 	pct := int(math.Round(float64(raw) / 15.0 * 100.0))
 	return min(max(pct, 0), 100)
+}
+
+// flagBits parses a hex-encoded bitmask string and extracts `count` bits
+// starting at `start` (counted from the least significant bit), matching
+// BambuStudio's DevUtil::get_flag_bits. Empty or malformed input yields 0.
+func flagBits(hex string, start, count int) int {
+	if hex == "" {
+		return 0
+	}
+	v, err := strconv.ParseUint(hex, 16, 64)
+	if err != nil {
+		return 0
+	}
+	return int((v >> uint(start)) & ((1 << uint(count)) - 1))
+}
+
+// isDrying reports whether an AMS drying status code represents an active
+// cycle, matching BambuStudio's DevAms::AmsIsDrying (checking/drying/error).
+func isDrying(status int) bool {
+	switch status {
+	case 1, 2, 5, 6:
+		return true
+	default:
+		return false
+	}
 }
 
 func chamberLightOn(lights []BambuLight) bool {

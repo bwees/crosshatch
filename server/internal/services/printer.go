@@ -150,6 +150,22 @@ func (s *PrinterService) UnloadMaterial(serial string, amsID int) error {
 	return client.UnloadMaterial(amsID)
 }
 
+func (s *PrinterService) StartDrying(serial string, amsID int, dto dtos.StartDryingDto) error {
+	client, err := s.client(serial)
+	if err != nil {
+		return err
+	}
+	return client.StartDrying(amsID, dto.Temperature, dto.Duration, dto.CoolingTemp, dto.Filament, dto.RotateTray)
+}
+
+func (s *PrinterService) StopDrying(serial string, amsID int) error {
+	client, err := s.client(serial)
+	if err != nil {
+		return err
+	}
+	return client.StopDrying(amsID)
+}
+
 func (s *PrinterService) SetPrintSpeed(serial string, level int) error {
 	client, err := s.client(serial)
 	if err != nil {

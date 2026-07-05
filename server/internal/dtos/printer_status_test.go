@@ -117,6 +117,39 @@ func TestSpeedLevelOmittedWhenAbsent(t *testing.T) {
 	}
 }
 
+func TestDryingGating(t *testing.T) {
+	// fun2 bit 5 set (0x20) advertises remote-dry support. The AMS info nibble
+	// selects the model: 3 = AMS 2 Pro, 4 = AMS HT, 1 = original AMS (no drying).
+	// Second unit's info 0x23 = type 3 (N3F) with dry_status 2 (drying) in bits 4-7.
+	state := decode(t, nil, `{"print":{
+		"fun2":"20",
+		"ams":{"ams":[
+			{"id":0,"info":"1","tray":[]},
+			{"id":1,"info":"23","dry_time":90,"tray":[]}
+		]}
+	}}`)
+	s := StatusFromMQTT(state)
+
+	if s.AMS[0].SupportsDrying {
+		t.Fatalf("original AMS (type 1) should not support drying: %+v", s.AMS[0])
+	}
+	if !s.AMS[1].SupportsDrying {
+		t.Fatalf("AMS 2 Pro (type 3) should support drying: %+v", s.AMS[1])
+	}
+	if !s.AMS[1].Drying {
+		t.Fatalf("dry_status 2 should report drying: %+v", s.AMS[1])
+	}
+	if s.AMS[1].DryingTime != 90 {
+		t.Fatalf("dryingTime: %v", s.AMS[1].DryingTime)
+	}
+
+	// Without the fun2 capability bit, a supported model is still gated off.
+	noCap := decode(t, nil, `{"print":{"ams":{"ams":[{"id":0,"info":"3","tray":[]}]}}}`)
+	if StatusFromMQTT(noCap).AMS[0].SupportsDrying {
+		t.Fatalf("drying must be gated off when fun2 bit 5 is unset")
+	}
+}
+
 func TestPartialMergePreservesAndReplaces(t *testing.T) {
 	state := decode(t, nil, `{"print":{
 		"gcode_state":"RUNNING",

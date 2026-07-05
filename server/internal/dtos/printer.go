@@ -26,6 +26,14 @@ type SetFanDto struct {
 	Speed int    `json:"speed"`
 }
 
+type StartDryingDto struct {
+	Temperature int    `json:"temperature" validate:"required"`
+	Duration    int    `json:"duration" validate:"required"`
+	CoolingTemp int    `json:"coolingTemp"`
+	Filament    string `json:"filament"`
+	RotateTray  bool   `json:"rotateTray"`
+}
+
 type SetFilamentDto struct {
 	AmsID         int    `json:"amsId"`
 	TrayID        int    `json:"trayId"`

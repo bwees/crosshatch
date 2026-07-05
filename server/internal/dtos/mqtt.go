@@ -56,6 +56,7 @@ type BambuPrintState struct {
 	BigFan1Speed           Number       `json:"big_fan1_speed"`
 	BigFan2Speed           Number       `json:"big_fan2_speed"`
 	SupportChamberTempEdit bool         `json:"support_chamber_temp_edit"`
+	Fun2                   string       `json:"fun2"`
 	Device                 BambuDevice  `json:"device"`
 	AMS                    BambuAMS     `json:"ams"`
 	VirSlot                []BambuTray  `json:"vir_slot"`
@@ -79,6 +80,7 @@ type BambuAMS struct {
 
 type BambuAMSUnit struct {
 	ID          Number      `json:"id"`
+	Info        string      `json:"info"`
 	HumidityRaw Number      `json:"humidity_raw"`
 	DryTime     Number      `json:"dry_time"`
 	Temp        Number      `json:"temp"`
