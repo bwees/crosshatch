@@ -3,7 +3,6 @@
 	import PrinterChamber from '$lib/components/icons/PrinterChamber.svelte';
 	import PrinterNozzle from '$lib/components/icons/PrinterNozzle.svelte';
 	import Card from '$lib/components/ui/card/card.svelte';
-	import Separator from '$lib/components/ui/separator/separator.svelte';
 	import type { PrinterStatus } from '$lib/sdk';
 
 	type Props = {
@@ -11,35 +10,40 @@
 	};
 
 	let { state }: Props = $props();
+
+	const cellClass =
+		'flex min-w-0 flex-col items-center justify-center gap-1 px-1 py-2 font-mono text-muted-foreground lg:flex-row lg:justify-start lg:gap-2 lg:px-3';
+	const valueClass = 'text-sm whitespace-nowrap sm:text-base lg:text-lg';
 </script>
 
-<Card class="w-1/3 gap-2 p-4">
-	<div class="flex items-center gap-2 font-mono text-xl text-muted-foreground">
-		<PrinterNozzle class="mr-1 size-6" />
-		<p class="font-bold">{state?.nozzle.temperature ?? '--'}</p>
-		<p>/</p>
-		<p>{state?.nozzle.targetTemperature ?? '--'} °C</p>
-	</div>
+<Card class="w-full gap-0 p-4 lg:w-1/3">
+	<div class="grid grid-cols-3 divide-x divide-border lg:grid-cols-1 lg:divide-x-0 lg:divide-y">
+		<div class={cellClass}>
+			<PrinterNozzle class="size-5 shrink-0 sm:size-6" />
+			<span class={valueClass}>
+				<span class="font-bold text-foreground">{state?.nozzle.temperature ?? '--'}</span>
+				<span> / {state?.nozzle.targetTemperature ?? '--'} °C</span>
+			</span>
+		</div>
 
-	<Separator class="my-2" />
+		<div class={cellClass}>
+			<PrinterBuildPlate class="size-5 shrink-0 sm:size-6" />
+			<span class={valueClass}>
+				<span class="font-bold text-foreground">{state?.buildPlate.temperature ?? '--'}</span>
+				<span> / {state?.buildPlate.targetTemperature ?? '--'} °C</span>
+			</span>
+		</div>
 
-	<div class="flex items-center gap-2 font-mono text-xl text-muted-foreground">
-		<PrinterBuildPlate class="mr-1 size-6" />
-		<p class="font-bold">{state?.buildPlate.temperature ?? '--'}</p>
-		<p>/</p>
-		<p>{state?.buildPlate.targetTemperature ?? '--'} °C</p>
-	</div>
-
-	<Separator class="my-2" />
-
-	<div class="flex items-center gap-2 font-mono text-xl text-muted-foreground">
-		<PrinterChamber class="mr-1 size-6" />
-		<p class="font-bold">{state?.chamber.temperature ?? '--'}</p>
-		{#if state?.chamber.controllable}
-			<p>/</p>
-			<p>{state?.chamber.targetTemperature ?? '--'} °C</p>
-		{:else}
-			<p>°C</p>
-		{/if}
+		<div class={cellClass}>
+			<PrinterChamber class="size-5 shrink-0 sm:size-6" />
+			<span class={valueClass}>
+				<span class="font-bold text-foreground">{state?.chamber.temperature ?? '--'}</span>
+				{#if state?.chamber.controllable}
+					<span> / {state?.chamber.targetTemperature ?? '--'} °C</span>
+				{:else}
+					<span> °C</span>
+				{/if}
+			</span>
+		</div>
 	</div>
 </Card>

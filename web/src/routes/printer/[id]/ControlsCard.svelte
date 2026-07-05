@@ -13,30 +13,45 @@
 
 	let { state: printerState, printer }: Props = $props();
 
-	let speed = $state(1);
 	const isPrinting = $derived(printerState?.state === 'RUNNING');
 
-	// svelte-ignore state_referenced_locally
-	// light state sometimes takes some time to update after toggling
-	let chamberLightOn = $state(printerState?.chamberLight ?? false);
+	let speed = $state(1);
+
+	let chamberLightOn = $state(false);
+
+	// The switch reflects the reported light state, but once the user toggles it
+	// we hold that value (ignoring stale reports) until the printer confirms,
+	// avoiding flicker without ever pushing a command on load.
+	let pendingLight: boolean | null = null;
 
 	$effect(() => {
-		if (printer?.serial === undefined) return;
-		setLight(printer?.serial ?? '', { state: chamberLightOn });
+		const reported = printerState?.chamberLight;
+		if (reported === undefined) return;
+		if (pendingLight !== null) {
+			if (reported === pendingLight) pendingLight = null;
+			return;
+		}
+		chamberLightOn = reported;
 	});
+
+	function toggleLight(checked: boolean) {
+		pendingLight = checked;
+		if (!printer?.serial) return;
+		setLight(printer.serial, { state: checked });
+	}
 </script>
 
-<Card class="w-2/3 gap-3 p-4">
-	<div class="grid grid-cols-2 items-center justify-between">
-		<div class="flex flex-col items-start gap-2">
-			<p class="flex">
-				<LightbulbIcon />
-				Light
-			</p>
-			<Switch size="lg" bind:checked={chamberLightOn} />
-		</div>
+<Card class="w-full gap-3 p-4 lg:w-2/3">
+	<div class="flex items-center justify-between">
+		<p class="flex items-center gap-2">
+			<LightbulbIcon class="size-5" />
+			Light
+		</p>
+		<Switch size="lg" bind:checked={chamberLightOn} onCheckedChange={toggleLight} />
 	</div>
+
 	<Separator />
+
 	<div class="flex flex-col gap-2">
 		<p>Print Speed</p>
 		<DetentSlider

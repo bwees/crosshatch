@@ -26,7 +26,7 @@
 	trackPadding={8}
 	{disabled}
 	class={[
-		'relative flex w-full touch-none items-center pt-1 pb-2 select-none data-disabled:opacity-50',
+		'relative mb-8 flex w-full touch-none items-center pt-1 pb-1 select-none data-disabled:opacity-50',
 		className
 	]}
 >
