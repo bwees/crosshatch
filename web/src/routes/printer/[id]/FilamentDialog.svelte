@@ -3,16 +3,12 @@
 	import * as Dialog from '$lib/components/ui/dialog';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import Label from '$lib/components/ui/label/label.svelte';
-	import {
-		FILAMENT_BRANDS,
-		FILAMENT_COLORS,
-		FILAMENT_PRESETS,
-		type FilamentBrand,
-		type FilamentPreset
-	} from '$lib/filaments';
-	import { setFilament, type Printer, type PrinterStatus } from '$lib/sdk';
+	import { FILAMENT_COLORS } from '$lib/filaments';
+	import { ensureFilaments, filaments } from '$lib/filaments.svelte';
+	import { setFilament, type Filament, type Printer, type PrinterStatus } from '$lib/sdk';
 	import { cn } from '$lib/utils';
 	import { ChevronDownIcon } from '@lucide/svelte';
+	import { onMount } from 'svelte';
 
 	type Tray = PrinterStatus['ams'][number]['trays'][number];
 
@@ -27,13 +23,15 @@
 
 	let { open = $bindable(), printer, amsId, trayId, label, tray }: Props = $props();
 
-	let brand = $state<FilamentBrand>('Generic');
+	let brand = $state<string>('Generic');
 	let selectedIdx = $state<string | undefined>(undefined);
 	let color = $state('#888888');
 	let saving = $state(false);
 
-	const presetsForBrand = $derived(FILAMENT_PRESETS.filter((p) => p.brand === brand));
-	const selectedPreset = $derived(FILAMENT_PRESETS.find((p) => p.trayInfoIdx === selectedIdx));
+	onMount(ensureFilaments);
+
+	const presetsForBrand = $derived(filaments.presets.filter((p) => p.brand === brand));
+	const selectedPreset = $derived(filaments.presets.find((p) => p.trayInfoIdx === selectedIdx));
 
 	function toHexInput(c?: string): string {
 		if (!c) return FILAMENT_COLORS[0];
@@ -53,10 +51,10 @@
 		if (open && !wasOpen) {
 			// Prefer an exact match on the reported filament id, falling back to the
 			// material family when the loaded spool isn't a known preset.
-			const exact = FILAMENT_PRESETS.find((p) => p.trayInfoIdx === tray?.trayInfoIdx);
+			const exact = filaments.presets.find((p) => p.trayInfoIdx === tray?.trayInfoIdx);
 			const match =
 				exact ??
-				FILAMENT_PRESETS.find(
+				filaments.presets.find(
 					(p) =>
 						p.brand === (tray?.brand?.toLowerCase().includes('bambu') ? 'Bambu' : 'Generic') &&
 						p.trayType === tray?.material
@@ -68,12 +66,12 @@
 		wasOpen = open;
 	});
 
-	function setBrand(b: FilamentBrand) {
+	function setBrand(b: string) {
 		brand = b;
 		if (selectedPreset?.brand !== b) selectedIdx = undefined;
 	}
 
-	function selectPreset(preset: FilamentPreset) {
+	function selectPreset(preset: Filament) {
 		selectedIdx = preset.trayInfoIdx;
 	}
 
@@ -116,7 +114,7 @@
 							<ChevronDownIcon class="size-4 opacity-50" />
 						</DropdownMenu.Trigger>
 						<DropdownMenu.Content>
-							{#each FILAMENT_BRANDS as b (b)}
+							{#each filaments.brands as b (b)}
 								<DropdownMenu.Item onSelect={() => setBrand(b)}>{b}</DropdownMenu.Item>
 							{/each}
 						</DropdownMenu.Content>

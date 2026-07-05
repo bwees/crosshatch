@@ -21,7 +21,8 @@ func NewDatabase() *gorm.DB {
 		panic("failed to connect database")
 	}
 
-	db.AutoMigrate(&models.Printer{})
+	db.AutoMigrate(&models.Printer{}, &models.Filament{})
+	seedFilaments(db)
 
 	return db
 }

@@ -14,9 +14,10 @@ import (
 )
 
 type PrinterService struct {
-	printerRepo *repositories.PrinterRepository
-	cameraRepo  *repositories.CameraRepository
-	socketio    *socketio.SocketIO
+	printerRepo  *repositories.PrinterRepository
+	cameraRepo   *repositories.CameraRepository
+	filamentRepo *repositories.FilamentRepository
+	socketio     *socketio.SocketIO
 
 	clientsMu sync.Mutex
 	clients   map[string]*bambu.BambuClient
@@ -193,7 +194,13 @@ type printerStatusPayload struct {
 // onPrinterStatusUpdate is handed to each Bambu client; it projects the merged
 // MQTT print state into a status DTO and broadcasts it.
 func (s *PrinterService) onPrinterStatusUpdate(serial string, state *dtos.BambuPrintState) {
-	s.BroadcastStatus(serial, dtos.StatusFromMQTT(state))
+	status := dtos.StatusFromMQTT(state)
+
+	if err := s.filamentRepo.CreateMissing(filamentsFromStatus(status)); err != nil {
+		fmt.Printf("Error recording filaments for printer %s: %v\n", serial, err)
+	}
+
+	s.BroadcastStatus(serial, status)
 }
 
 func (s *PrinterService) BroadcastStatus(serial string, status dtos.PrinterStatus) {
@@ -286,13 +293,14 @@ func (s *PrinterService) reconcileCameraStreams() {
 	}
 }
 
-func NewPrinterService(lc fx.Lifecycle, printerRepo *repositories.PrinterRepository, cameraRepo *repositories.CameraRepository, socket *socketio.SocketIO) *PrinterService {
+func NewPrinterService(lc fx.Lifecycle, printerRepo *repositories.PrinterRepository, cameraRepo *repositories.CameraRepository, filamentRepo *repositories.FilamentRepository, socket *socketio.SocketIO) *PrinterService {
 	svc := &PrinterService{
-		printerRepo: printerRepo,
-		cameraRepo:  cameraRepo,
-		socketio:    socket,
-		clients:     make(map[string]*bambu.BambuClient),
-		statusCache: make(map[string]dtos.PrinterStatus),
+		printerRepo:  printerRepo,
+		cameraRepo:   cameraRepo,
+		filamentRepo: filamentRepo,
+		socketio:     socket,
+		clients:      make(map[string]*bambu.BambuClient),
+		statusCache:  make(map[string]dtos.PrinterStatus),
 	}
 
 	// Send each newly connected client the latest known status for every printer.
