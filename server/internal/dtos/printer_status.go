@@ -25,6 +25,7 @@ type AMSTray struct {
 	Loaded        bool     `json:"loaded" validate:"required"`
 	Material      *string  `json:"material,omitempty"`
 	Brand         *string  `json:"brand,omitempty"`
+	TrayInfoIdx   *string  `json:"trayInfoIdx,omitempty"`
 	Color         *string  `json:"color,omitempty"`
 	KValue        *float64 `json:"kValue,omitempty"`
 	NozzleTempMin *float64 `json:"nozzleTempMin,omitempty"`
@@ -156,6 +157,10 @@ func trayFromMQTT(tray BambuTray, id int, loaded bool) AMSTray {
 	if tray.TraySubBrands != "" {
 		v := tray.TraySubBrands
 		result.Brand = &v
+	}
+	if tray.TrayInfoIdx != "" {
+		v := tray.TrayInfoIdx
+		result.TrayInfoIdx = &v
 	}
 	if tray.TrayColor != "" {
 		v := tray.TrayColor

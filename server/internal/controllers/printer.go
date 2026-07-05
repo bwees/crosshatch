@@ -112,6 +112,17 @@ func (c *PrinterController) Register(api *fuego.Server) {
 		fuego.OptionDefaultStatusCode(204),
 	)
 
+	fuego.Post(route, "/{serial}/filament", func(ctx fuego.ContextWithBody[dtos.SetFilamentDto]) (any, error) {
+		dto, err := ctx.Body()
+		if err != nil {
+			return nil, err
+		}
+		return nil, c.svc.SetFilament(ctx.PathParam("serial"), dto)
+	},
+		fuego.OptionOperationID("setFilament"),
+		fuego.OptionDefaultStatusCode(204),
+	)
+
 	fuego.Post(route, "/{serial}/unload/{amsId}", func(ctx fuego.ContextNoBody) (any, error) {
 		amsID, err := strconv.Atoi(ctx.PathParam("amsId"))
 		if err != nil {

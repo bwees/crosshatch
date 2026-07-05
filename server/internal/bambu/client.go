@@ -183,6 +183,24 @@ func (c *BambuClient) SetFanSpeed(fan int, percent int) error {
 	})
 }
 
+// SetFilament assigns a filament preset, colour and temperature window to an
+// AMS slot (ams_id/tray_id) via the ams_filament_setting command.
+func (c *BambuClient) SetFilament(amsID, trayID int, trayInfoIdx, trayColor, trayType string, nozzleTempMin, nozzleTempMax int) error {
+	return c.sendCommand(map[string]any{
+		"print": map[string]any{
+			"command":         "ams_filament_setting",
+			"ams_id":          amsID,
+			"tray_id":         trayID,
+			"tray_info_idx":   trayInfoIdx,
+			"tray_color":      trayColor,
+			"nozzle_temp_min": nozzleTempMin,
+			"nozzle_temp_max": nozzleTempMax,
+			"tray_type":       trayType,
+			"setting_id":      "",
+		},
+	})
+}
+
 func (c *BambuClient) UnloadMaterial(amsID int) error {
 	return c.sendCommand(map[string]any{
 		"print": map[string]any{

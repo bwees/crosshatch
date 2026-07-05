@@ -6,6 +6,7 @@
 	import { DropletIcon, SunIcon } from '@lucide/svelte';
 	import { Duration } from 'luxon';
 	import Separator from '../../../lib/components/ui/separator/separator.svelte';
+	import FilamentDialog from './FilamentDialog.svelte';
 
 	type AMSUnit = PrinterStatus['ams'][number];
 	type Tray = AMSUnit['trays'][number];
@@ -15,10 +16,18 @@
 		printer: Printer | undefined;
 	};
 
-	let { state, printer }: Props = $props();
+	let { state: printerState, printer }: Props = $props();
 
-	let ams = $derived(state?.ams ?? []);
-	let externalSpool = $derived(state?.externalSpool);
+	let ams = $derived(printerState?.ams ?? []);
+	let externalSpool = $derived(printerState?.externalSpool);
+
+	let dialogOpen = $state(false);
+	let target = $state<{ amsId: number; trayId: number; label: string; tray: Tray }>();
+
+	function editTray(amsId: number, trayId: number, label: string, tray: Tray) {
+		target = { amsId, trayId, label, tray };
+		dialogOpen = true;
+	}
 
 	let currentlyLoadedUnitID = $derived(
 		ams.find((unit) => unit.trays.some((tray) => tray.loaded))?.id ??
@@ -72,6 +81,17 @@
 	{/if}
 </Card>
 
+{#if target}
+	<FilamentDialog
+		bind:open={dialogOpen}
+		{printer}
+		amsId={target.amsId}
+		trayId={target.trayId}
+		label={target.label}
+		tray={target.tray}
+	/>
+{/if}
+
 {#snippet amsUnit(unit: AMSUnit, label: string)}
 	<div class="flex w-full flex-col gap-2 rounded-lg border border-foreground/10 p-2">
 		<div class="flex items-center justify-between">
@@ -91,7 +111,12 @@
 		</div>
 		<div class="grid grid-cols-4 gap-2">
 			{#each unit.trays as tray, i (tray.id)}
-				{@render trayCard(tray, `A${i + 1}`)}
+				{@render trayCard(tray, {
+					slotLabel: `A${i + 1}`,
+					amsId: unit.id,
+					trayId: tray.id,
+					title: `${label} · A${i + 1}`
+				})}
 			{/each}
 		</div>
 	</div>
@@ -102,16 +127,26 @@
 		<p class="mb-2 text-center text-sm font-medium">Ext</p>
 		<div class="flex justify-center">
 			<div class="w-1/4">
-				{@render trayCard(tray, '')}
+				{@render trayCard(tray, {
+					slotLabel: '',
+					amsId: 255,
+					trayId: 254,
+					title: 'External Spool'
+				})}
 			</div>
 		</div>
 	</div>
 {/snippet}
 
-{#snippet trayCard(tray: Tray, label: string)}
+{#snippet trayCard(
+	tray: Tray,
+	opts: { slotLabel: string; amsId: number; trayId: number; title: string }
+)}
 	<div class="flex flex-col items-center gap-1">
-		<div
-			class="flex aspect-3/4 w-full flex-col items-center justify-center rounded-md border px-2 py-3"
+		<button
+			type="button"
+			onclick={() => editTray(opts.amsId, opts.trayId, opts.title, tray)}
+			class="flex aspect-3/4 w-full cursor-pointer flex-col items-center justify-center rounded-md border px-2 py-3 transition hover:ring-2 hover:ring-ring focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
 			style:background-color={bambuColorToCss(tray.color)}
 			style:color={isLightColor(tray.color) ? '#000' : '#fff'}
 		>
@@ -123,15 +158,15 @@
 					<span class="mt-0.5 text-[10px] font-medium">K {tray.kValue.toFixed(3)}</span>
 				{/if}
 			{/if}
-		</div>
-		{#if label}
+		</button>
+		{#if opts.slotLabel}
 			<span
 				class={cn(
 					'text-[10px] font-medium text-muted-foreground',
 					tray.loaded ? 'text-primary' : 'text-muted-foreground'
 				)}
 			>
-				{label}
+				{opts.slotLabel}
 			</span>
 		{/if}
 	</div>

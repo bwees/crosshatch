@@ -175,6 +175,14 @@ func (s *PrinterService) SetFan(serial string, fan string, speed int) error {
 	return client.SetFanSpeed(node, speed)
 }
 
+func (s *PrinterService) SetFilament(serial string, dto dtos.SetFilamentDto) error {
+	client, err := s.client(serial)
+	if err != nil {
+		return err
+	}
+	return client.SetFilament(dto.AmsID, dto.TrayID, dto.TrayInfoIdx, dto.TrayColor, dto.TrayType, dto.NozzleTempMin, dto.NozzleTempMax)
+}
+
 // printerStatusPayload flattens the printer status alongside its serial, so the
 // emitted event matches the `{ serial, ...status }` shape the clients expect.
 type printerStatusPayload struct {

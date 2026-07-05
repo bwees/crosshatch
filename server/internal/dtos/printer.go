@@ -25,3 +25,13 @@ type SetFanDto struct {
 	Fan   string `json:"fan" validate:"required"`
 	Speed int    `json:"speed"`
 }
+
+type SetFilamentDto struct {
+	AmsID         int    `json:"amsId"`
+	TrayID        int    `json:"trayId"`
+	TrayInfoIdx   string `json:"trayInfoIdx" validate:"required"`
+	TrayColor     string `json:"trayColor" validate:"required"`
+	TrayType      string `json:"trayType" validate:"required"`
+	NozzleTempMin int    `json:"nozzleTempMin" validate:"required"`
+	NozzleTempMax int    `json:"nozzleTempMax" validate:"required"`
+}

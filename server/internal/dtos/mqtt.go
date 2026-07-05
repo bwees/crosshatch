@@ -89,6 +89,7 @@ type BambuTray struct {
 	ID            *Number `json:"id"`
 	TrayType      string  `json:"tray_type"`
 	TraySubBrands string  `json:"tray_sub_brands"`
+	TrayInfoIdx   string  `json:"tray_info_idx"`
 	TrayColor     string  `json:"tray_color"`
 	NozzleTempMin *Number `json:"nozzle_temp_min"`
 	NozzleTempMax *Number `json:"nozzle_temp_max"`

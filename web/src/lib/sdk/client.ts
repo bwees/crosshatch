@@ -55,6 +55,15 @@ export type SetFanDto = {
 	fan: string;
 	speed?: number;
 };
+export type SetFilamentDto = {
+	amsId?: number;
+	nozzleTempMax: number;
+	nozzleTempMin: number;
+	trayColor: string;
+	trayId?: number;
+	trayInfoIdx: string;
+	trayType: string;
+};
 export type SetLightDto = {
 	state?: boolean;
 };
@@ -78,6 +87,7 @@ export type PrinterStatus = {
 			nozzleTempMax?: number;
 			nozzleTempMin?: number;
 			remaining?: number;
+			trayInfoIdx?: string;
 		}[];
 	}[];
 	buildPlate: {
@@ -101,6 +111,7 @@ export type PrinterStatus = {
 		nozzleTempMax?: number;
 		nozzleTempMin?: number;
 		remaining?: number;
+		trayInfoIdx?: string;
 	};
 	fans: {
 		aux: number;
@@ -313,6 +324,49 @@ export function setFan(
 				...opts,
 				method: 'POST',
 				body: setFanDto,
+				headers: oazapfts.mergeHeaders(opts?.headers, {
+					Accept: accept
+				})
+			})
+		)
+	);
+}
+/**
+ * func12
+ */
+export function setFilament(
+	serial: string,
+	setFilamentDto: SetFilamentDto,
+	{
+		accept
+	}: {
+		accept?: string;
+	} = {},
+	opts?: Oazapfts.RequestOpts
+) {
+	return oazapfts.ok(
+		oazapfts.fetchJson<
+			| {
+					status: 204;
+					data: UnknownInterface;
+			  }
+			| {
+					status: 400;
+					data: HttpError;
+			  }
+			| {
+					status: 500;
+					data: HttpError;
+			  }
+			| {
+					status: number;
+			  }
+		>(
+			`/api/printer/${encodeURIComponent(serial)}/filament`,
+			oazapfts.json({
+				...opts,
+				method: 'POST',
+				body: setFilamentDto,
 				headers: oazapfts.mergeHeaders(opts?.headers, {
 					Accept: accept
 				})
@@ -558,7 +612,7 @@ export function stopPrint(
 	);
 }
 /**
- * func12
+ * func13
  */
 export function unloadMaterial(
 	serial: string,
