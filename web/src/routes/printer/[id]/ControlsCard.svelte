@@ -1,7 +1,7 @@
 <script lang="ts">
 	import DetentSlider from '$lib/components/DetentSlider.svelte';
+	import * as Accordion from '$lib/components/ui/accordion';
 	import Card from '$lib/components/ui/card/card.svelte';
-	import Separator from '$lib/components/ui/separator/separator.svelte';
 	import Switch from '$lib/components/ui/switch/switch.svelte';
 	import { setLight, setPrintSpeed, type Printer, type PrinterStatus } from '$lib/sdk';
 	import { SyncedControl } from '$lib/synced-control.svelte';
@@ -36,8 +36,8 @@
 	});
 </script>
 
-<Card class="w-full gap-3 p-4">
-	<div class="flex items-center justify-between">
+<Card class="w-full gap-0 px-4 py-0">
+	<div class="flex items-center justify-between border-b py-4">
 		<p class="flex items-center gap-2">
 			<LightbulbIcon class="size-5" />
 			Light
@@ -45,28 +45,34 @@
 		<Switch size="lg" bind:checked={light.current} onCheckedChange={light.set} />
 	</div>
 
-	<Separator />
+	<Accordion.Root type="multiple">
+		<Accordion.Item value="fans">
+			<Accordion.Trigger>
+				<span class="flex items-center gap-2">
+					<FanIcon class="size-5" />
+					Fans
+				</span>
+			</Accordion.Trigger>
+			<Accordion.Content>
+				<FanControl state={printerState} {printer} />
+			</Accordion.Content>
+		</Accordion.Item>
 
-	<div class="flex flex-col gap-2">
-		<p class="flex items-center gap-2">
-			<FanIcon class="size-5" />
-			Fans
-		</p>
-		<FanControl state={printerState} {printer} />
-	</div>
-
-	<Separator />
-
-	<div class="flex flex-col gap-2">
-		<p class="flex items-center gap-2">
-			<RabbitIcon class="size-5" />
-			Print Speed
-		</p>
-		<DetentSlider
-			labels={['Silent', 'Standard', 'Sport', 'Ludicrous']}
-			bind:value={speed.current}
-			onValueCommit={speed.set}
-			disabled={!isPrinting}
-		/>
-	</div>
+		<Accordion.Item value="speed">
+			<Accordion.Trigger>
+				<span class="flex items-center gap-2">
+					<RabbitIcon class="size-5" />
+					Print Speed
+				</span>
+			</Accordion.Trigger>
+			<Accordion.Content class="pt-3">
+				<DetentSlider
+					labels={['Silent', 'Standard', 'Sport', 'Ludicrous']}
+					bind:value={speed.current}
+					onValueCommit={speed.set}
+					disabled={!isPrinting}
+				/>
+			</Accordion.Content>
+		</Accordion.Item>
+	</Accordion.Root>
 </Card>
