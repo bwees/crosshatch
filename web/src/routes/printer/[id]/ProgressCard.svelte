@@ -17,7 +17,7 @@
 
 	let durationRemaining = $derived(Duration.fromObject({ minutes: state?.timeRemaining ?? 0 }));
 	let timeRemaining = $derived(
-		durationRemaining.hours == 0
+		durationRemaining.minutes < 60
 			? durationRemaining.toFormat("m'm'")
 			: durationRemaining.toFormat("h'h 'm'm'")
 	);
