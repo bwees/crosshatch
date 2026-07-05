@@ -160,12 +160,6 @@
 					{/each}
 				</div>
 			</div>
-
-			{#if selectedPreset}
-				<p class="text-sm text-muted-foreground">
-					Nozzle temperature: {selectedPreset.nozzleTempMin}–{selectedPreset.nozzleTempMax} °C
-				</p>
-			{/if}
 		</div>
 
 		<Dialog.Footer>
