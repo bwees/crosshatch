@@ -90,6 +90,17 @@ func (c *PrinterController) Register(api *fuego.Server) {
 		fuego.OptionDefaultStatusCode(204),
 	)
 
+	fuego.Post(route, "/{serial}/speed", func(ctx fuego.ContextWithBody[dtos.SetPrintSpeedDto]) (any, error) {
+		dto, err := ctx.Body()
+		if err != nil {
+			return nil, err
+		}
+		return nil, c.svc.SetPrintSpeed(ctx.PathParam("serial"), dto.Level)
+	},
+		fuego.OptionOperationID("setPrintSpeed"),
+		fuego.OptionDefaultStatusCode(204),
+	)
+
 	fuego.Post(route, "/{serial}/unload/{amsId}", func(ctx fuego.ContextNoBody) (any, error) {
 		amsID, err := strconv.Atoi(ctx.PathParam("amsId"))
 		if err != nil {

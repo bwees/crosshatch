@@ -16,3 +16,7 @@ type UpdatePrinterDto struct {
 type SetLightDto struct {
 	State bool `json:"state"`
 }
+
+type SetPrintSpeedDto struct {
+	Level int `json:"level" validate:"required"`
+}

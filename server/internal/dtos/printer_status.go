@@ -49,6 +49,7 @@ type PrinterStatus struct {
 	AMS           []AMSUnit     `json:"ams" validate:"required"`
 	ExternalSpool *AMSTray      `json:"externalSpool,omitempty"`
 	ChamberLight  bool          `json:"chamberLight" validate:"required"`
+	SpeedLevel    *int          `json:"speedLevel,omitempty"`
 }
 
 func StatusFromMQTT(s *BambuPrintState) PrinterStatus {
@@ -63,6 +64,11 @@ func StatusFromMQTT(s *BambuPrintState) PrinterStatus {
 		Nozzle:       Temperature{Temperature: float64(s.NozzleTemper), TargetTemperature: float64(s.NozzleTargetTemper)},
 		AMS:          []AMSUnit{},
 		ChamberLight: chamberLightOn(s.LightsReport),
+	}
+
+	if s.SpdLvl != nil {
+		level := int(*s.SpdLvl)
+		status.SpeedLevel = &level
 	}
 
 	if s.StgCur != nil {

@@ -7,13 +7,15 @@
 		value?: number;
 		disabled?: boolean;
 		class?: string;
+		onValueCommit?: (value: number) => void;
 	};
 
 	let {
 		labels,
 		value = $bindable(0),
 		disabled = false,
-		class: className
+		class: className,
+		onValueCommit
 	}: Props = $props();
 </script>
 
@@ -24,6 +26,7 @@
 	max={labels.length - 1}
 	step={1}
 	trackPadding={8}
+	{onValueCommit}
 	{disabled}
 	class={[
 		'relative mb-8 flex w-full touch-none items-center pt-1 pb-1 select-none data-disabled:opacity-50',

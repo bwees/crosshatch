@@ -3,8 +3,8 @@
 	import Card from '$lib/components/ui/card/card.svelte';
 	import Separator from '$lib/components/ui/separator/separator.svelte';
 	import Switch from '$lib/components/ui/switch/switch.svelte';
-	import { setLight, type Printer, type PrinterStatus } from '$lib/sdk';
-	import { LightbulbIcon } from '@lucide/svelte';
+	import { setLight, setPrintSpeed, type Printer, type PrinterStatus } from '$lib/sdk';
+	import { LightbulbIcon, RabbitIcon } from '@lucide/svelte';
 
 	type Props = {
 		state: PrinterStatus | undefined;
@@ -15,7 +15,19 @@
 
 	const isPrinting = $derived(printerState?.state === 'RUNNING');
 
+	// Slider index 0-3 maps to Bambu speed levels 1-4.
 	let speed = $state(1);
+
+	$effect(() => {
+		if (printerState?.speedLevel !== undefined) {
+			speed = printerState.speedLevel - 1;
+		}
+	});
+
+	function commitSpeed(index: number) {
+		if (!printer?.serial) return;
+		setPrintSpeed(printer.serial, { level: index + 1 });
+	}
 
 	let chamberLightOn = $state(false);
 
@@ -53,10 +65,14 @@
 	<Separator />
 
 	<div class="flex flex-col gap-2">
-		<p>Print Speed</p>
+		<p class="flex items-center gap-2">
+			<RabbitIcon class="size-5" />
+			Print Speed
+		</p>
 		<DetentSlider
 			labels={['Silent', 'Standard', 'Sport', 'Ludicrous']}
 			bind:value={speed}
+			onValueCommit={commitSpeed}
 			disabled={!isPrinting}
 		/>
 	</div>

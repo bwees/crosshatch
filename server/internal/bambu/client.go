@@ -150,6 +150,17 @@ func (c *BambuClient) SetLight(on bool) error {
 	})
 }
 
+// SetPrintSpeed selects a speed profile: 1=silent, 2=standard, 3=sport,
+// 4=ludicrous. The level is sent as a string param, matching OrcaSlicer.
+func (c *BambuClient) SetPrintSpeed(level int) error {
+	return c.sendCommand(map[string]any{
+		"print": map[string]any{
+			"command": "print_speed",
+			"param":   strconv.Itoa(level),
+		},
+	})
+}
+
 func (c *BambuClient) UnloadMaterial(amsID int) error {
 	return c.sendCommand(map[string]any{
 		"print": map[string]any{

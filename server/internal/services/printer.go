@@ -149,6 +149,14 @@ func (s *PrinterService) UnloadMaterial(serial string, amsID int) error {
 	return client.UnloadMaterial(amsID)
 }
 
+func (s *PrinterService) SetPrintSpeed(serial string, level int) error {
+	client, err := s.client(serial)
+	if err != nil {
+		return err
+	}
+	return client.SetPrintSpeed(level)
+}
+
 // printerStatusPayload flattens the printer status alongside its serial, so the
 // emitted event matches the `{ serial, ...status }` shape the clients expect.
 type printerStatusPayload struct {

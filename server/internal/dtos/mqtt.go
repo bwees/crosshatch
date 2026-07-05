@@ -51,6 +51,7 @@ type BambuPrintState struct {
 	BedTargetTemper        Number       `json:"bed_target_temper"`
 	NozzleTemper           Number       `json:"nozzle_temper"`
 	NozzleTargetTemper     Number       `json:"nozzle_target_temper"`
+	SpdLvl                 *Number      `json:"spd_lvl"`
 	SupportChamberTempEdit bool         `json:"support_chamber_temp_edit"`
 	Device                 BambuDevice  `json:"device"`
 	AMS                    BambuAMS     `json:"ams"`
