@@ -2,6 +2,7 @@
 	import Slider from '$lib/components/ui/slider/slider.svelte';
 	import * as Tabs from '$lib/components/ui/tabs';
 	import { setFan, type Printer, type PrinterStatus } from '$lib/sdk';
+	import { SyncedControl } from '$lib/synced-control.svelte';
 
 	type Props = {
 		state: PrinterStatus | undefined;
@@ -18,25 +19,23 @@
 
 	let selected = $state('part');
 
-	// Setpoints are seeded once from the first reported speeds, then act purely
-	// as user-controlled targets — realtime updates only drive the readout below.
-	let setpoints = $state({ part: 0, aux: 0, chamber: 0 });
-	let seeded = false;
-
-	$effect(() => {
-		if (seeded || !printerState?.fans) return;
-		setpoints = {
-			part: printerState.fans.part,
-			aux: printerState.fans.aux,
-			chamber: printerState.fans.chamber
-		};
-		seeded = true;
-	});
-
-	function commit(fan: string, value: number) {
-		if (!printer?.serial) return;
-		setFan(printer.serial, { fan, speed: value });
-	}
+	// One synced control per fan: seeds from the reported speed, applies on
+	// commit, and holds the setpoint until the printer confirms it. The report is
+	// rounded to the slider step so confirmation matches exactly — the printer
+	// only resolves fan speed to 0-15 gears.
+	const controls = fans.map(
+		(fan) =>
+			new SyncedControl<number>({
+				initial: 0,
+				reported: () => {
+					const value = printerState?.fans?.[fan.key];
+					return value === undefined ? undefined : Math.round(value / 10) * 10;
+				},
+				apply: (speed) => {
+					if (printer?.serial) setFan(printer.serial, { fan: fan.key, speed });
+				}
+			})
+	);
 </script>
 
 <Tabs.Root bind:value={selected} class="w-full gap-2">
@@ -45,18 +44,18 @@
 			<Tabs.Trigger value={fan.key}>{fan.label}</Tabs.Trigger>
 		{/each}
 	</Tabs.List>
-	{#each fans as fan (fan.key)}
+	{#each fans as fan, i (fan.key)}
 		<Tabs.Content value={fan.key} class="flex items-center gap-3">
 			<Slider
 				type="single"
 				min={0}
 				max={100}
 				step={10}
-				bind:value={setpoints[fan.key]}
-				onValueCommit={(v) => commit(fan.key, v as number)}
+				bind:value={controls[i].current}
+				onValueCommit={controls[i].set}
 				class="flex-1"
 			/>
-			<span class="w-9 text-right text-sm font-medium tabular-nums">{setpoints[fan.key]}%</span>
+			<span class="w-9 text-right text-sm font-medium tabular-nums">{controls[i].current}%</span>
 		</Tabs.Content>
 	{/each}
 </Tabs.Root>

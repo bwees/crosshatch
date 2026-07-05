@@ -27,10 +27,8 @@
 		<ProgressCard {state} {printer} />
 	</div>
 	<div class="flex w-full flex-col gap-4">
-		<div class="flex flex-col gap-4 lg:flex-row">
-			<TemperatureCard {state} />
-			<ControlsCard {state} {printer} />
-		</div>
+		<TemperatureCard {state} />
+		<ControlsCard {state} {printer} />
 		<MaterialsCard {state} {printer} />
 	</div>
 </div>
