@@ -29,8 +29,8 @@
 	class={['lucide-icon lucide lucide-printer-build-plate', className]}
 	{...rest}
 >
-	<path d="M3 21h18" />
-	<path d="M7 19q2-2 0-4t0-4t0-4" />
-	<path d="M12 19q2-2 0-4t0-4t0-4" />
-	<path d="M17 19q2-2 0-4t0-4t0-4" />
+	<path d="M4 19h16" />
+	<path d="M8 17q2-2 0-4t0-4t0-4" />
+	<path d="M12 17q2-2 0-4t0-4t0-4" />
+	<path d="M16 17q2-2 0-4t0-4t0-4" />
 </svg>

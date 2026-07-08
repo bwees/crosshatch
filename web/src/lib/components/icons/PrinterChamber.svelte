@@ -29,8 +29,8 @@
 	class={['lucide-icon lucide lucide-printer-chamber', className]}
 	{...rest}
 >
-	<rect x="3" y="3" width="18" height="18" rx="2" />
-	<path d="M3 8h18" />
-	<path d="M12 8v5" />
-	<path d="M7 17h10" />
+	<rect x="5" y="5" width="14" height="14" rx="2" />
+	<path d="M5 10h14" />
+	<path d="M12 10v4" />
+	<path d="M8 16h8" />
 </svg>

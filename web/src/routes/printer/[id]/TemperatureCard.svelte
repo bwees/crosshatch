@@ -4,7 +4,6 @@
 	import PrinterNozzle from '$lib/components/icons/PrinterNozzle.svelte';
 	import Card from '$lib/components/ui/card/card.svelte';
 	import type { PrinterStatus } from '$lib/sdk';
-	import { cn } from '$lib/utils';
 
 	type Props = {
 		state: PrinterStatus | undefined;
@@ -22,7 +21,7 @@
 <Card class="w-full gap-0 p-2">
 	<div class="grid grid-cols-3 divide-x divide-border">
 		<div class={cellClass}>
-			<PrinterNozzle class={cn(iconClass, 'mt-2')} />
+			<PrinterNozzle class={iconClass} />
 			<span class={valueClass}>
 				<span class="font-bold text-foreground">{state?.nozzle.temperature ?? '--'}</span>
 				<span class={unitClass}> / {state?.nozzle.targetTemperature ?? '--'} °C</span>
@@ -30,7 +29,7 @@
 		</div>
 
 		<div class={cellClass}>
-			<PrinterBuildPlate class={cn(iconClass, 'mb-1.5')} />
+			<PrinterBuildPlate class={iconClass} />
 			<span class={valueClass}>
 				<span class="font-bold text-foreground">{state?.buildPlate.temperature ?? '--'}</span>
 				<span class={unitClass}> / {state?.buildPlate.targetTemperature ?? '--'} °C</span>
@@ -38,7 +37,7 @@
 		</div>
 
 		<div class={cellClass}>
-			<PrinterChamber class={cn(iconClass, 'sm:size-7')} />
+			<PrinterChamber class={iconClass} />
 			<span class={valueClass}>
 				<span class="font-bold text-foreground">{state?.chamber.temperature ?? '--'}</span>
 				{#if state?.chamber.controllable}

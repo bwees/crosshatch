@@ -29,8 +29,8 @@
 	class={['lucide-icon lucide lucide-printer-nozzle', className]}
 	{...rest}
 >
-	<rect x="5" y="3" width="14" height="4" rx="0.5" />
-	<path d="M5 7L12 17L19 7" />
-	<path d="M5 13q1 1 0 2t0 2" />
-	<path d="M19 13q1 1 0 2t0 2" />
+	<rect x="4" y="4" width="16" height="4" rx="0.5" />
+	<path d="M4 8L12 20L20 8" />
+	<path d="M5 14q1 1 0 2t0 2" />
+	<path d="M19 14q1 1 0 2t0 2" />
 </svg>
