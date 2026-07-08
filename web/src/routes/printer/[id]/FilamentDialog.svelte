@@ -4,8 +4,9 @@
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import Label from '$lib/components/ui/label/label.svelte';
 	import { FILAMENT_COLORS } from '$lib/filaments';
-	import { ensureFilaments, filaments } from '$lib/filaments.svelte';
+	import { filamentManager } from '$lib/filaments.svelte';
 	import { setFilament, type Filament, type Printer, type PrinterStatus } from '$lib/sdk';
+	import { Spinner } from '$lib/components/ui/spinner';
 	import { cn } from '$lib/utils';
 	import { ChevronDownIcon } from '@lucide/svelte';
 	import { onMount } from 'svelte';
@@ -23,15 +24,14 @@
 
 	let { open = $bindable(), printer, amsId, trayId, label, tray }: Props = $props();
 
-	let brand = $state<string>('Generic');
-	let selectedIdx = $state<string | undefined>(undefined);
-	let color = $state('#888888');
+	// User edits override the defaults derived from the tray; they win once set and
+	// are cleared when the dialog closes so the next open starts fresh.
+	let brandOverride = $state<string | undefined>(undefined);
+	let idxOverride = $state<string | undefined>(undefined);
+	let colorOverride = $state<string | undefined>(undefined);
 	let saving = $state(false);
 
-	onMount(ensureFilaments);
-
-	const presetsForBrand = $derived(filaments.presets.filter((p) => p.brand === brand));
-	const selectedPreset = $derived(filaments.presets.find((p) => p.trayInfoIdx === selectedIdx));
+	onMount(() => filamentManager.init());
 
 	function toHexInput(c?: string): string {
 		if (!c) return FILAMENT_COLORS[0];
@@ -43,36 +43,40 @@
 		return (hex.replace('#', '') + 'FF').toUpperCase();
 	}
 
-	// Snapshot the loaded filament into the form when the dialog opens, so live
-	// status updates don't clobber in-progress edits. onOpenChange doesn't fire
-	// for programmatic opens, so key off the open transition instead.
-	let wasOpen = false;
+	// Prefer an exact match on the reported filament id, falling back to the
+	// material family when the loaded spool isn't a known preset.
+	const defaultMatch = $derived.by(() => {
+		const exact = filamentManager.presets.find((p) => p.trayInfoIdx === tray?.trayInfoIdx);
+		return (
+			exact ??
+			filamentManager.presets.find(
+				(p) =>
+					p.brand === (tray?.brand?.toLowerCase().includes('bambu') ? 'Bambu' : 'Generic') &&
+					p.trayType === tray?.material
+			)
+		);
+	});
+
+	const brand = $derived(brandOverride ?? defaultMatch?.brand ?? 'Generic');
+	const presetsForBrand = $derived(filamentManager.presets.filter((p) => p.brand === brand));
+	const selectedIdx = $derived(idxOverride ?? defaultMatch?.trayInfoIdx);
+	const selectedPreset = $derived(presetsForBrand.find((p) => p.trayInfoIdx === selectedIdx));
+	const color = $derived(colorOverride ?? toHexInput(tray?.color));
+
 	$effect(() => {
-		if (open && !wasOpen) {
-			// Prefer an exact match on the reported filament id, falling back to the
-			// material family when the loaded spool isn't a known preset.
-			const exact = filaments.presets.find((p) => p.trayInfoIdx === tray?.trayInfoIdx);
-			const match =
-				exact ??
-				filaments.presets.find(
-					(p) =>
-						p.brand === (tray?.brand?.toLowerCase().includes('bambu') ? 'Bambu' : 'Generic') &&
-						p.trayType === tray?.material
-				);
-			brand = match?.brand ?? 'Generic';
-			selectedIdx = match?.trayInfoIdx;
-			color = toHexInput(tray?.color);
+		if (!open) {
+			brandOverride = undefined;
+			idxOverride = undefined;
+			colorOverride = undefined;
 		}
-		wasOpen = open;
 	});
 
 	function setBrand(b: string) {
-		brand = b;
-		if (selectedPreset?.brand !== b) selectedIdx = undefined;
+		brandOverride = b;
 	}
 
 	function selectPreset(preset: Filament) {
-		selectedIdx = preset.trayInfoIdx;
+		idxOverride = preset.trayInfoIdx;
 	}
 
 	async function save() {
@@ -102,65 +106,71 @@
 			<Dialog.Description>Configure the material for this slot.</Dialog.Description>
 		</Dialog.Header>
 
-		<div class="grid gap-4">
-			<div class="grid grid-cols-2 gap-3">
-				<div class="grid gap-2">
-					<Label>Brand</Label>
-					<DropdownMenu.Root>
-						<DropdownMenu.Trigger
-							class={cn(buttonVariants({ variant: 'outline' }), 'w-full justify-between')}
-						>
-							{brand}
-							<ChevronDownIcon class="size-4 opacity-50" />
-						</DropdownMenu.Trigger>
-						<DropdownMenu.Content>
-							{#each filaments.brands as b (b)}
-								<DropdownMenu.Item onSelect={() => setBrand(b)}>{b}</DropdownMenu.Item>
-							{/each}
-						</DropdownMenu.Content>
-					</DropdownMenu.Root>
+		{#if filamentManager.loading}
+			<div class="flex items-center justify-center py-12 text-muted-foreground">
+				<Spinner class="size-6" />
+			</div>
+		{:else}
+			<div class="grid gap-4">
+				<div class="grid grid-cols-2 gap-3">
+					<div class="grid gap-2">
+						<Label>Brand</Label>
+						<DropdownMenu.Root>
+							<DropdownMenu.Trigger
+								class={cn(buttonVariants({ variant: 'outline' }), 'w-full justify-between')}
+							>
+								{brand}
+								<ChevronDownIcon class="size-4 opacity-50" />
+							</DropdownMenu.Trigger>
+							<DropdownMenu.Content>
+								{#each filamentManager.brands as b (b)}
+									<DropdownMenu.Item onSelect={() => setBrand(b)}>{b}</DropdownMenu.Item>
+								{/each}
+							</DropdownMenu.Content>
+						</DropdownMenu.Root>
+					</div>
+
+					<div class="grid gap-2">
+						<Label>Type</Label>
+						<DropdownMenu.Root>
+							<DropdownMenu.Trigger
+								class={cn(buttonVariants({ variant: 'outline' }), 'w-full justify-between')}
+							>
+								<span class="truncate">{selectedPreset?.name ?? 'Select…'}</span>
+								<ChevronDownIcon class="size-4 shrink-0 opacity-50" />
+							</DropdownMenu.Trigger>
+							<DropdownMenu.Content class="max-h-64 overflow-y-auto">
+								{#each presetsForBrand as preset (preset.trayInfoIdx)}
+									<DropdownMenu.Item onSelect={() => selectPreset(preset)}>
+										{preset.name}
+									</DropdownMenu.Item>
+								{/each}
+							</DropdownMenu.Content>
+						</DropdownMenu.Root>
+					</div>
 				</div>
 
 				<div class="grid gap-2">
-					<Label>Type</Label>
-					<DropdownMenu.Root>
-						<DropdownMenu.Trigger
-							class={cn(buttonVariants({ variant: 'outline' }), 'w-full justify-between')}
-						>
-							<span class="truncate">{selectedPreset?.name ?? 'Select…'}</span>
-							<ChevronDownIcon class="size-4 shrink-0 opacity-50" />
-						</DropdownMenu.Trigger>
-						<DropdownMenu.Content class="max-h-64 overflow-y-auto">
-							{#each presetsForBrand as preset (preset.trayInfoIdx)}
-								<DropdownMenu.Item onSelect={() => selectPreset(preset)}>
-									{preset.name}
-								</DropdownMenu.Item>
-							{/each}
-						</DropdownMenu.Content>
-					</DropdownMenu.Root>
+					<Label>Color</Label>
+					<div class="flex flex-wrap gap-2">
+						{#each FILAMENT_COLORS as swatch (swatch)}
+							<button
+								type="button"
+								aria-label={swatch}
+								onclick={() => (colorOverride = swatch)}
+								style:background-color={swatch}
+								class={cn(
+									'size-7 rounded-full border border-foreground/15 transition',
+									color.toUpperCase() === swatch
+										? 'ring-2 ring-ring ring-offset-2 ring-offset-background'
+										: 'hover:scale-110'
+								)}
+							></button>
+						{/each}
+					</div>
 				</div>
 			</div>
-
-			<div class="grid gap-2">
-				<Label>Color</Label>
-				<div class="flex flex-wrap gap-2">
-					{#each FILAMENT_COLORS as swatch (swatch)}
-						<button
-							type="button"
-							aria-label={swatch}
-							onclick={() => (color = swatch)}
-							style:background-color={swatch}
-							class={cn(
-								'size-7 rounded-full border border-foreground/15 transition',
-								color.toUpperCase() === swatch
-									? 'ring-2 ring-ring ring-offset-2 ring-offset-background'
-									: 'hover:scale-110'
-							)}
-						></button>
-					{/each}
-				</div>
-			</div>
-		</div>
+		{/if}
 
 		<Dialog.Footer>
 			<Button variant="outline" onclick={() => (open = false)}>Cancel</Button>

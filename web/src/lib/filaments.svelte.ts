@@ -1,25 +1,22 @@
 import { getFilaments, type Filament } from '$lib/sdk';
+import { SvelteSet } from 'svelte/reactivity';
 
-let presets = $state<Filament[]>([]);
-let started = false;
+class FilamentManager {
+	presets: Filament[] = $state([]);
+	brands = $derived(new SvelteSet(this.presets.map((p) => p.brand)));
 
-// ensureFilaments fetches the catalog once and caches it for every dialog.
-export async function ensureFilaments() {
-	if (started) return;
-	started = true;
-	try {
-		presets = await getFilaments();
-	} catch (e) {
-		started = false;
-		throw e;
+	loading = $state(false);
+
+	async init() {
+		if (this.loading) return;
+		this.loading = true;
+
+		try {
+			this.presets = await getFilaments();
+		} finally {
+			this.loading = false;
+		}
 	}
 }
 
-export const filaments = {
-	get presets() {
-		return presets;
-	},
-	get brands() {
-		return [...new Set(presets.map((p) => p.brand))];
-	}
-};
+export const filamentManager = new FilamentManager();
