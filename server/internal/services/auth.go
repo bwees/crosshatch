@@ -94,6 +94,11 @@ func (s *AuthService) ListUsers() ([]models.User, error) {
 }
 
 func (s *AuthService) DeleteUser(id uint) error {
+	err := s.sessions.DeleteSessionsForUser(id)
+	if err != nil {
+		return err
+	}
+
 	return s.users.DeleteUser(id)
 }
 

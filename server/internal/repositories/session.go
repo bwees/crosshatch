@@ -36,6 +36,10 @@ func (r *SessionRepository) DeleteExpired() error {
 	return r.db.Delete(&models.Session{}, "expires_at < ?", time.Now()).Error
 }
 
+func (r *SessionRepository) DeleteSessionsForUser(userID uint) error {
+	return r.db.Delete(&models.Session{}, "user_id = ?", userID).Error
+}
+
 func NewSessionRepository(db *gorm.DB) *SessionRepository {
 	return &SessionRepository{db: db}
 }
