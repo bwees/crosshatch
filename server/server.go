@@ -39,6 +39,7 @@ func NewServer(lc fx.Lifecycle, controllers Controllers, authMiddleware *control
 	server.OpenAPI.Config.JSONFilePath = "openapi.json"
 	server.OpenAPI.Config.SpecURL = "/openapi.json"
 	server.OpenAPI.Config.DisableSwaggerUI = true
+	server.OpenAPI.Config.PrettyFormatJSON = true
 
 	// Optional fields use Go pointers with `omitempty`: when nil they are
 	// omitted from the JSON entirely, never serialized as null. Fuego marks
