@@ -1,8 +1,6 @@
 package controllers
 
 import (
-	"strconv"
-
 	"crosshatch/internal/dtos"
 	"crosshatch/internal/services"
 
@@ -69,17 +67,14 @@ func (c *UsersController) Register(api *fuego.Server) {
 			return nil, err
 		}
 
-		id, err := strconv.ParseUint(ctx.PathParam("id"), 10, 64)
-		if err != nil {
-			return nil, fuego.BadRequestError{Title: "Bad Request", Detail: "invalid user id"}
-		}
+		id := ctx.PathParam("id")
 
 		current := userFromContext(ctx.Request().Context())
-		if current != nil && uint(id) == current.ID {
+		if current != nil && id == current.ID {
 			return nil, fuego.BadRequestError{Title: "Bad Request", Detail: "cannot delete your own account"}
 		}
 
-		return nil, c.svc.DeleteUser(uint(id))
+		return nil, c.svc.DeleteUser(id)
 	},
 		fuego.OptionOperationID("deleteUser"),
 		fuego.OptionDefaultStatusCode(204),

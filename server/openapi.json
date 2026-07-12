@@ -541,8 +541,7 @@
 				"description": "UserDto schema",
 				"properties": {
 					"id": {
-						"minimum": 0,
-						"type": "integer"
+						"type": "string"
 					},
 					"isAdmin": {
 						"type": "boolean"

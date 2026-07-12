@@ -23,7 +23,7 @@ func (r *UserRepository) GetUsers() ([]models.User, error) {
 	return users, nil
 }
 
-func (r *UserRepository) DeleteUser(id uint) error {
+func (r *UserRepository) DeleteUser(id string) error {
 	return r.db.Delete(&models.User{}, "id = ?", id).Error
 }
 
@@ -45,7 +45,7 @@ func (r *UserRepository) GetUserByUsername(username string) (*models.User, error
 	return &user, nil
 }
 
-func (r *UserRepository) GetUserByID(id uint) (*models.User, error) {
+func (r *UserRepository) GetUserByID(id string) (*models.User, error) {
 	user := models.User{}
 	err := r.db.First(&user, "id = ?", id).Error
 	if err != nil {

@@ -93,7 +93,7 @@ func (s *AuthService) ListUsers() ([]models.User, error) {
 	return s.users.GetUsers()
 }
 
-func (s *AuthService) DeleteUser(id uint) error {
+func (s *AuthService) DeleteUser(id string) error {
 	err := s.sessions.DeleteSessionsForUser(id)
 	if err != nil {
 		return err

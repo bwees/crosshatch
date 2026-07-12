@@ -17,7 +17,7 @@ export type LoginDto = {
     username: string;
 };
 export type UserDto = {
-    id?: number;
+    id?: string;
     isAdmin?: boolean;
     username?: string;
 };

@@ -12,7 +12,7 @@ type CreateUserDto struct {
 }
 
 type UserDto struct {
-	ID       uint   `json:"id"`
+	ID       string `json:"id"`
 	Username string `json:"username"`
 	IsAdmin  bool   `json:"isAdmin"`
 }
