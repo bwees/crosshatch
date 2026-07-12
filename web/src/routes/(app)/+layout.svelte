@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import AppSidebar from '$lib/components/Sidebar.svelte';
+	import PrinterMenu from '$lib/components/PrinterMenu.svelte';
 	import { Separator } from '$lib/components/ui/separator/index.js';
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
 	import { printerManager } from '$lib/managers/printers.manager.svelte';
@@ -23,6 +24,11 @@
 				<p>{selectedPrinter?.name}</p>
 				<p class="text-xs text-muted-foreground">{selectedPrinter?.serial}</p>
 			</div>
+			{#if selectedPrinter}
+				<div class="ms-auto">
+					<PrinterMenu printer={selectedPrinter} />
+				</div>
+			{/if}
 		</header>
 		<div class="flex-1 p-4">
 			{@render children()}

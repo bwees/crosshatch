@@ -2,6 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import CreatePrinterDialog from '$lib/components/CreatePrinterDialog.svelte';
+	import PrinterMenu from '$lib/components/PrinterMenu.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import Card from '$lib/components/ui/card/card.svelte';
 	import { printerManager } from '$lib/managers/printers.manager.svelte';
@@ -34,6 +35,9 @@
 				<div>
 					<p class="text-md font-bold">{printer.name}</p>
 					<p class="text-xs text-muted-foreground">{printer.serial}</p>
+				</div>
+				<div class="ms-auto">
+					<PrinterMenu {printer} />
 				</div>
 			</div>
 		</Card>
