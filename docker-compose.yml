@@ -19,10 +19,12 @@ services:
       - PORT=3000
       - GO2RTC_WS_URL=ws://go2rtc:1984
       - GO2RTC_API_URL=http://go2rtc:1984
+      - DATA_DIR=/data
       # Trust the Vite dev server for Websocket connections (CORS).
-      - WS_ALLOWED_ORIGINS=http://localhost:5173
+      - WS_ALLOWED_ORIGINS=http://localhost:5173,https://brandon-macbook-pro.tail72746.ts.net
     volumes:
       - ./server:/app/server
+      - ./docker/data:/data
       - go-build-cache:/root/.cache/go-build
       - go-mod-cache:/go/pkg/mod
     depends_on:

@@ -20,7 +20,7 @@ RUN chmod +x /entrypoint.sh /app/server/crosshatch && mkdir -p /config /data
 ENV PORT=3000
 ENV WEB_STATIC_PATH=/app/web
 ENV GO2RTC_WS_URL=ws://localhost:1984
-ENV DATABASE_URL=/data/crosshatch.db
+ENV DATA_DIR=/data
 
 EXPOSE 3000 1984 8555
 

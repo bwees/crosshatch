@@ -6,7 +6,7 @@ export default defineConfig({
 	plugins: [tailwindcss(), sveltekit()],
 	server: {
 		host: true,
-		allowedHosts: ['brandon-macbook-pro'],
+		allowedHosts: ['brandon-macbook-pro.tail72746.ts.net'],
 
 		proxy: {
 			'/api': {

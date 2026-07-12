@@ -2,7 +2,8 @@
 node_modules/
 *.tsbuildinfo
 .DS_Store
-dev/
-server-old/data/
+
 # Added by goreleaser init:
 dist/
+
+docker/data

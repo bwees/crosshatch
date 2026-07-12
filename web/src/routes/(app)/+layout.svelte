@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import AppSidebar from '$lib/components/Sidebar.svelte';
-	import PrinterMenu from '$lib/components/PrinterMenu.svelte';
+	import PrinterSettingsButton from '$lib/components/PrinterSettingsButton.svelte';
 	import { Separator } from '$lib/components/ui/separator/index.js';
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
 	import { printerManager } from '$lib/managers/printers.manager.svelte';
@@ -26,7 +26,7 @@
 			</div>
 			{#if selectedPrinter}
 				<div class="ms-auto">
-					<PrinterMenu printer={selectedPrinter} />
+					<PrinterSettingsButton printer={selectedPrinter} />
 				</div>
 			{/if}
 		</header>

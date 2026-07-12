@@ -3,6 +3,7 @@ module crosshatch
 go 1.26.4
 
 require (
+	github.com/SherClockHolmes/webpush-go v1.4.0
 	github.com/eclipse/paho.mqtt.golang v1.5.1
 	github.com/getkin/kin-openapi v0.133.0
 	github.com/glebarez/sqlite v1.11.0

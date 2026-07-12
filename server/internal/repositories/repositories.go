@@ -8,4 +8,5 @@ var Module = fx.Provide(
 	NewFilamentRepository,
 	NewUserRepository,
 	NewSessionRepository,
+	NewNotificationRepository,
 )

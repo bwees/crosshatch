@@ -59,6 +59,27 @@ export type Filament = {
     trayInfoIdx: string;
     trayType: string;
 };
+export type NotificationSettingsDto = {
+    enabled?: boolean;
+    notifyComplete?: boolean;
+    notifyError?: boolean;
+};
+export type PushSubscriptionDto = {
+    auth: string;
+    deviceId: string;
+    endpoint: string;
+    p256dh: string;
+};
+export type TestNotificationDto = {
+    deviceId: string;
+    serial: string;
+};
+export type UnsubscribeDto = {
+    deviceId: string;
+};
+export type VapidDto = {
+    publicKey: string;
+};
 export type Printer = {
     accessCode: string;
     hostIp: string;
@@ -306,6 +327,158 @@ export function getFilaments({ accept }: {
     } | {
         status: number;
     }>("/api/filament/", {
+        ...opts,
+        headers: oazapfts.mergeHeaders(opts?.headers, {
+            Accept: accept
+        })
+    }));
+}
+/**
+ * func5
+ */
+export function getPrinterNotificationSettings(deviceId: string, serial: string, { accept }: {
+    accept?: string;
+} = {}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.ok(oazapfts.fetchJson<{
+        status: 200;
+        data: NotificationSettingsDto;
+    } | {
+        status: 400;
+        data: HttpError;
+    } | {
+        status: 500;
+        data: HttpError;
+    } | {
+        status: number;
+    }>(`/api/notifications/settings/${encodeURIComponent(deviceId)}/${encodeURIComponent(serial)}`, {
+        ...opts,
+        headers: oazapfts.mergeHeaders(opts?.headers, {
+            Accept: accept
+        })
+    }));
+}
+/**
+ * func6
+ */
+export function updatePrinterNotificationSettings(deviceId: string, serial: string, notificationSettingsDto: NotificationSettingsDto, { accept }: {
+    accept?: string;
+} = {}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.ok(oazapfts.fetchJson<{
+        status: 200;
+        data: NotificationSettingsDto;
+    } | {
+        status: 400;
+        data: HttpError;
+    } | {
+        status: 500;
+        data: HttpError;
+    } | {
+        status: number;
+    }>(`/api/notifications/settings/${encodeURIComponent(deviceId)}/${encodeURIComponent(serial)}`, oazapfts.json({
+        ...opts,
+        method: "PUT",
+        body: notificationSettingsDto,
+        headers: oazapfts.mergeHeaders(opts?.headers, {
+            Accept: accept
+        })
+    })));
+}
+/**
+ * func2
+ */
+export function subscribeNotifications(pushSubscriptionDto: PushSubscriptionDto, { accept }: {
+    accept?: string;
+} = {}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.ok(oazapfts.fetchJson<{
+        status: 204;
+        data: UnknownInterface;
+    } | {
+        status: 400;
+        data: HttpError;
+    } | {
+        status: 500;
+        data: HttpError;
+    } | {
+        status: number;
+    }>("/api/notifications/subscribe", oazapfts.json({
+        ...opts,
+        method: "POST",
+        body: pushSubscriptionDto,
+        headers: oazapfts.mergeHeaders(opts?.headers, {
+            Accept: accept
+        })
+    })));
+}
+/**
+ * func4
+ */
+export function testNotification(testNotificationDto: TestNotificationDto, { accept }: {
+    accept?: string;
+} = {}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.ok(oazapfts.fetchJson<{
+        status: 204;
+        data: UnknownInterface;
+    } | {
+        status: 400;
+        data: HttpError;
+    } | {
+        status: 500;
+        data: HttpError;
+    } | {
+        status: number;
+    }>("/api/notifications/test", oazapfts.json({
+        ...opts,
+        method: "POST",
+        body: testNotificationDto,
+        headers: oazapfts.mergeHeaders(opts?.headers, {
+            Accept: accept
+        })
+    })));
+}
+/**
+ * func3
+ */
+export function unsubscribeNotifications(unsubscribeDto: UnsubscribeDto, { accept }: {
+    accept?: string;
+} = {}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.ok(oazapfts.fetchJson<{
+        status: 204;
+        data: UnknownInterface;
+    } | {
+        status: 400;
+        data: HttpError;
+    } | {
+        status: 500;
+        data: HttpError;
+    } | {
+        status: number;
+    }>("/api/notifications/unsubscribe", oazapfts.json({
+        ...opts,
+        method: "POST",
+        body: unsubscribeDto,
+        headers: oazapfts.mergeHeaders(opts?.headers, {
+            Accept: accept
+        })
+    })));
+}
+/**
+ * func1
+ */
+export function getVapidConfig({ accept }: {
+    accept?: string;
+} = {}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.ok(oazapfts.fetchJson<{
+        status: 200;
+        data: VapidDto;
+    } | {
+        status: 400;
+        data: HttpError;
+    } | {
+        status: 500;
+        data: HttpError;
+    } | {
+        status: number;
+    }>("/api/notifications/vapid", {
         ...opts,
         headers: oazapfts.mergeHeaders(opts?.headers, {
             Accept: accept

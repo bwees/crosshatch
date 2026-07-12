@@ -24,6 +24,19 @@ type PrinterService struct {
 
 	statusMu    sync.RWMutex
 	statusCache map[string]dtos.PrinterStatus
+
+	observersMu sync.Mutex
+	observers   []StatusObserver
+}
+
+// StatusObserver is notified of every printer status transition. prev is nil
+// when no prior status has been cached for the printer.
+type StatusObserver func(serial string, prev, next *dtos.PrinterStatus)
+
+func (s *PrinterService) AddObserver(o StatusObserver) {
+	s.observersMu.Lock()
+	s.observers = append(s.observers, o)
+	s.observersMu.Unlock()
 }
 
 func (s *PrinterService) GetPrinters() ([]models.Printer, error) {
@@ -216,7 +229,26 @@ func (s *PrinterService) onPrinterStatusUpdate(serial string, state *dtos.BambuP
 		fmt.Printf("Error recording filaments for printer %s: %v\n", serial, err)
 	}
 
+	s.statusMu.RLock()
+	var prev *dtos.PrinterStatus
+	if cached, ok := s.statusCache[serial]; ok {
+		prevCopy := cached
+		prev = &prevCopy
+	}
+	s.statusMu.RUnlock()
+
 	s.BroadcastStatus(serial, status)
+	s.notifyObservers(serial, prev, &status)
+}
+
+func (s *PrinterService) notifyObservers(serial string, prev, next *dtos.PrinterStatus) {
+	s.observersMu.Lock()
+	observers := s.observers
+	s.observersMu.Unlock()
+
+	for _, o := range observers {
+		o(serial, prev, next)
+	}
 }
 
 func (s *PrinterService) BroadcastStatus(serial string, status dtos.PrinterStatus) {

@@ -11,7 +11,15 @@ const CACHE = `cache-${version}`;
 const ASSETS = [...build, ...files];
 
 sw.addEventListener('install', (event) => {
-	event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(ASSETS)));
+	// Cache assets individually so one failed request (common in dev) doesn't
+	// reject the whole install and block the worker from activating.
+	event.waitUntil(
+		(async () => {
+			const cache = await caches.open(CACHE);
+			await Promise.allSettled(ASSETS.map((asset) => cache.add(asset)));
+			await sw.skipWaiting();
+		})()
+	);
 });
 
 sw.addEventListener('activate', (event) => {
@@ -20,6 +28,45 @@ sw.addEventListener('activate', (event) => {
 			await Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)));
 			await sw.clients.claim();
 		})
+	);
+});
+
+type PushPayload = {
+	printerSerial: string;
+	title: string;
+	body: string;
+	tag: string;
+};
+
+sw.addEventListener('push', (event) => {
+	const payload = event.data?.json() as PushPayload | undefined;
+	if (!payload) return;
+
+	event.waitUntil(
+		sw.registration.showNotification(payload.title, {
+			body: payload.body,
+			icon: '/icon-192.png',
+			badge: '/icon-192.png',
+			tag: payload.tag,
+			data: { serial: payload.printerSerial }
+		})
+	);
+});
+
+sw.addEventListener('notificationclick', (event) => {
+	event.notification.close();
+
+	const serial = event.notification.data?.serial as string | undefined;
+	const target = `/printer/${serial}`;
+
+	event.waitUntil(
+		(async () => {
+			const clients = await sw.clients.matchAll({ type: 'window', includeUncontrolled: true });
+			for (const client of clients) {
+				if ('focus' in client) return client.focus();
+			}
+			return sw.clients.openWindow(target);
+		})()
 	);
 });
 

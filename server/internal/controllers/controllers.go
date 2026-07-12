@@ -15,5 +15,6 @@ var Module = fx.Provide(
 	fx.Annotate(NewFilamentController, fx.As(new(Controller)), fx.ResultTags(`group:"controllers"`)),
 	fx.Annotate(NewAuthController, fx.As(new(Controller)), fx.ResultTags(`group:"controllers"`)),
 	fx.Annotate(NewUsersController, fx.As(new(Controller)), fx.ResultTags(`group:"controllers"`)),
+	fx.Annotate(NewNotificationController, fx.As(new(Controller)), fx.ResultTags(`group:"controllers"`)),
 	NewAuthMiddleware,
 )

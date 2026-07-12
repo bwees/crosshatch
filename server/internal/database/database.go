@@ -2,7 +2,9 @@ package database
 
 import (
 	"os"
+	"path/filepath"
 
+	"crosshatch/internal/config"
 	"crosshatch/internal/database/models"
 
 	"github.com/glebarez/sqlite"
@@ -11,10 +13,12 @@ import (
 )
 
 func NewDatabase() *gorm.DB {
-	dsn := os.Getenv("DATABASE_URL")
-	if dsn == "" {
-		dsn = "crosshatch.db"
+	dataDir := config.DataDir()
+	if err := os.MkdirAll(dataDir, 0o755); err != nil {
+		panic("failed to create data directory")
 	}
+
+	dsn := filepath.Join(dataDir, "crosshatch.db")
 
 	db, err := gorm.Open(sqlite.Open(dsn), &gorm.Config{})
 	if err != nil {
@@ -26,6 +30,9 @@ func NewDatabase() *gorm.DB {
 		&models.Filament{},
 		&models.User{},
 		&models.Session{},
+		&models.PushSubscription{},
+		&models.NotificationSetting{},
+		&models.AppConfig{},
 	)
 
 	seedFilaments(db)

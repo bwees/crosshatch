@@ -144,6 +144,21 @@
 				],
 				"type": "object"
 			},
+			"NotificationSettingsDto": {
+				"description": "NotificationSettingsDto schema",
+				"properties": {
+					"enabled": {
+						"type": "boolean"
+					},
+					"notifyComplete": {
+						"type": "boolean"
+					},
+					"notifyError": {
+						"type": "boolean"
+					}
+				},
+				"type": "object"
+			},
 			"Printer": {
 				"description": "Printer schema",
 				"properties": {
@@ -418,6 +433,30 @@
 				],
 				"type": "object"
 			},
+			"PushSubscriptionDto": {
+				"description": "PushSubscriptionDto schema",
+				"properties": {
+					"auth": {
+						"type": "string"
+					},
+					"deviceId": {
+						"type": "string"
+					},
+					"endpoint": {
+						"type": "string"
+					},
+					"p256dh": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"auth",
+					"deviceId",
+					"endpoint",
+					"p256dh"
+				],
+				"type": "object"
+			},
 			"SetFanDto": {
 				"description": "SetFanDto schema",
 				"properties": {
@@ -522,6 +561,34 @@
 				],
 				"type": "object"
 			},
+			"TestNotificationDto": {
+				"description": "TestNotificationDto schema",
+				"properties": {
+					"deviceId": {
+						"type": "string"
+					},
+					"serial": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"deviceId",
+					"serial"
+				],
+				"type": "object"
+			},
+			"UnsubscribeDto": {
+				"description": "UnsubscribeDto schema",
+				"properties": {
+					"deviceId": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"deviceId"
+				],
+				"type": "object"
+			},
 			"UpdatePrinterDto": {
 				"description": "UpdatePrinterDto schema",
 				"properties": {
@@ -550,6 +617,18 @@
 						"type": "string"
 					}
 				},
+				"type": "object"
+			},
+			"VapidDto": {
+				"description": "VapidDto schema",
+				"properties": {
+					"publicKey": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"publicKey"
+				],
 				"type": "object"
 			},
 			"unknown-interface": {
@@ -1007,6 +1086,500 @@
 				"tags": [
 					"api",
 					"filament"
+				]
+			}
+		},
+		"/api/notifications/settings/{deviceId}/{serial}": {
+			"get": {
+				"description": "#### Controller: \n\n`crosshatch/internal/controllers.(*NotificationController).Register.func5`\n\n#### Middlewares:\n\n- `crosshatch/internal/controllers.(*AuthMiddleware).Handler`\n\n---\n\n",
+				"operationId": "getPrinterNotificationSettings",
+				"parameters": [
+					{
+						"in": "header",
+						"name": "Accept",
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "path",
+						"name": "deviceId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "path",
+						"name": "serial",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/NotificationSettingsDto"
+								}
+							},
+							"application/xml": {
+								"schema": {
+									"$ref": "#/components/schemas/NotificationSettingsDto"
+								}
+							}
+						},
+						"description": "OK"
+					},
+					"400": {
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/HTTPError"
+								}
+							},
+							"application/xml": {
+								"schema": {
+									"$ref": "#/components/schemas/HTTPError"
+								}
+							}
+						},
+						"description": "Bad Request _(validation or deserialization error)_"
+					},
+					"500": {
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/HTTPError"
+								}
+							},
+							"application/xml": {
+								"schema": {
+									"$ref": "#/components/schemas/HTTPError"
+								}
+							}
+						},
+						"description": "Internal Server Error _(panics)_"
+					},
+					"default": {
+						"description": ""
+					}
+				},
+				"summary": "func5",
+				"tags": [
+					"api",
+					"notifications"
+				]
+			},
+			"put": {
+				"description": "#### Controller: \n\n`crosshatch/internal/controllers.(*NotificationController).Register.func6`\n\n#### Middlewares:\n\n- `crosshatch/internal/controllers.(*AuthMiddleware).Handler`\n\n---\n\n",
+				"operationId": "updatePrinterNotificationSettings",
+				"parameters": [
+					{
+						"in": "header",
+						"name": "Accept",
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "path",
+						"name": "deviceId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "path",
+						"name": "serial",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"content": {
+						"*/*": {
+							"schema": {
+								"$ref": "#/components/schemas/NotificationSettingsDto"
+							}
+						}
+					},
+					"description": "Request body for dtos.NotificationSettingsDto",
+					"required": true
+				},
+				"responses": {
+					"200": {
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/NotificationSettingsDto"
+								}
+							},
+							"application/xml": {
+								"schema": {
+									"$ref": "#/components/schemas/NotificationSettingsDto"
+								}
+							}
+						},
+						"description": "OK"
+					},
+					"400": {
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/HTTPError"
+								}
+							},
+							"application/xml": {
+								"schema": {
+									"$ref": "#/components/schemas/HTTPError"
+								}
+							}
+						},
+						"description": "Bad Request _(validation or deserialization error)_"
+					},
+					"500": {
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/HTTPError"
+								}
+							},
+							"application/xml": {
+								"schema": {
+									"$ref": "#/components/schemas/HTTPError"
+								}
+							}
+						},
+						"description": "Internal Server Error _(panics)_"
+					},
+					"default": {
+						"description": ""
+					}
+				},
+				"summary": "func6",
+				"tags": [
+					"api",
+					"notifications"
+				]
+			}
+		},
+		"/api/notifications/subscribe": {
+			"post": {
+				"description": "#### Controller: \n\n`crosshatch/internal/controllers.(*NotificationController).Register.func2`\n\n#### Middlewares:\n\n- `crosshatch/internal/controllers.(*AuthMiddleware).Handler`\n\n---\n\n",
+				"operationId": "subscribeNotifications",
+				"parameters": [
+					{
+						"in": "header",
+						"name": "Accept",
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"content": {
+						"*/*": {
+							"schema": {
+								"$ref": "#/components/schemas/PushSubscriptionDto"
+							}
+						}
+					},
+					"description": "Request body for dtos.PushSubscriptionDto",
+					"required": true
+				},
+				"responses": {
+					"204": {
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/unknown-interface"
+								}
+							},
+							"application/xml": {
+								"schema": {
+									"$ref": "#/components/schemas/unknown-interface"
+								}
+							}
+						},
+						"description": "No Content"
+					},
+					"400": {
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/HTTPError"
+								}
+							},
+							"application/xml": {
+								"schema": {
+									"$ref": "#/components/schemas/HTTPError"
+								}
+							}
+						},
+						"description": "Bad Request _(validation or deserialization error)_"
+					},
+					"500": {
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/HTTPError"
+								}
+							},
+							"application/xml": {
+								"schema": {
+									"$ref": "#/components/schemas/HTTPError"
+								}
+							}
+						},
+						"description": "Internal Server Error _(panics)_"
+					},
+					"default": {
+						"description": ""
+					}
+				},
+				"summary": "func2",
+				"tags": [
+					"api",
+					"notifications"
+				]
+			}
+		},
+		"/api/notifications/test": {
+			"post": {
+				"description": "#### Controller: \n\n`crosshatch/internal/controllers.(*NotificationController).Register.func4`\n\n#### Middlewares:\n\n- `crosshatch/internal/controllers.(*AuthMiddleware).Handler`\n\n---\n\n",
+				"operationId": "testNotification",
+				"parameters": [
+					{
+						"in": "header",
+						"name": "Accept",
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"content": {
+						"*/*": {
+							"schema": {
+								"$ref": "#/components/schemas/TestNotificationDto"
+							}
+						}
+					},
+					"description": "Request body for dtos.TestNotificationDto",
+					"required": true
+				},
+				"responses": {
+					"204": {
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/unknown-interface"
+								}
+							},
+							"application/xml": {
+								"schema": {
+									"$ref": "#/components/schemas/unknown-interface"
+								}
+							}
+						},
+						"description": "No Content"
+					},
+					"400": {
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/HTTPError"
+								}
+							},
+							"application/xml": {
+								"schema": {
+									"$ref": "#/components/schemas/HTTPError"
+								}
+							}
+						},
+						"description": "Bad Request _(validation or deserialization error)_"
+					},
+					"500": {
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/HTTPError"
+								}
+							},
+							"application/xml": {
+								"schema": {
+									"$ref": "#/components/schemas/HTTPError"
+								}
+							}
+						},
+						"description": "Internal Server Error _(panics)_"
+					},
+					"default": {
+						"description": ""
+					}
+				},
+				"summary": "func4",
+				"tags": [
+					"api",
+					"notifications"
+				]
+			}
+		},
+		"/api/notifications/unsubscribe": {
+			"post": {
+				"description": "#### Controller: \n\n`crosshatch/internal/controllers.(*NotificationController).Register.func3`\n\n#### Middlewares:\n\n- `crosshatch/internal/controllers.(*AuthMiddleware).Handler`\n\n---\n\n",
+				"operationId": "unsubscribeNotifications",
+				"parameters": [
+					{
+						"in": "header",
+						"name": "Accept",
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"content": {
+						"*/*": {
+							"schema": {
+								"$ref": "#/components/schemas/UnsubscribeDto"
+							}
+						}
+					},
+					"description": "Request body for dtos.UnsubscribeDto",
+					"required": true
+				},
+				"responses": {
+					"204": {
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/unknown-interface"
+								}
+							},
+							"application/xml": {
+								"schema": {
+									"$ref": "#/components/schemas/unknown-interface"
+								}
+							}
+						},
+						"description": "No Content"
+					},
+					"400": {
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/HTTPError"
+								}
+							},
+							"application/xml": {
+								"schema": {
+									"$ref": "#/components/schemas/HTTPError"
+								}
+							}
+						},
+						"description": "Bad Request _(validation or deserialization error)_"
+					},
+					"500": {
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/HTTPError"
+								}
+							},
+							"application/xml": {
+								"schema": {
+									"$ref": "#/components/schemas/HTTPError"
+								}
+							}
+						},
+						"description": "Internal Server Error _(panics)_"
+					},
+					"default": {
+						"description": ""
+					}
+				},
+				"summary": "func3",
+				"tags": [
+					"api",
+					"notifications"
+				]
+			}
+		},
+		"/api/notifications/vapid": {
+			"get": {
+				"description": "#### Controller: \n\n`crosshatch/internal/controllers.(*NotificationController).Register.func1`\n\n#### Middlewares:\n\n- `crosshatch/internal/controllers.(*AuthMiddleware).Handler`\n\n---\n\n",
+				"operationId": "getVapidConfig",
+				"parameters": [
+					{
+						"in": "header",
+						"name": "Accept",
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/VapidDto"
+								}
+							},
+							"application/xml": {
+								"schema": {
+									"$ref": "#/components/schemas/VapidDto"
+								}
+							}
+						},
+						"description": "OK"
+					},
+					"400": {
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/HTTPError"
+								}
+							},
+							"application/xml": {
+								"schema": {
+									"$ref": "#/components/schemas/HTTPError"
+								}
+							}
+						},
+						"description": "Bad Request _(validation or deserialization error)_"
+					},
+					"500": {
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/HTTPError"
+								}
+							},
+							"application/xml": {
+								"schema": {
+									"$ref": "#/components/schemas/HTTPError"
+								}
+							}
+						},
+						"description": "Internal Server Error _(panics)_"
+					},
+					"default": {
+						"description": ""
+					}
+				},
+				"summary": "func1",
+				"tags": [
+					"api",
+					"notifications"
 				]
 			}
 		},
@@ -2501,6 +3074,12 @@
 			}
 		}
 	},
+	"servers": [
+		{
+			"description": "local server",
+			"url": "http://:3000"
+		}
+	],
 	"tags": [
 		{
 			"name": "api"
@@ -2510,6 +3089,9 @@
 		},
 		{
 			"name": "filament"
+		},
+		{
+			"name": "notifications"
 		},
 		{
 			"name": "printer"

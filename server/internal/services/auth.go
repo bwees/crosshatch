@@ -36,12 +36,13 @@ var (
 )
 
 type AuthService struct {
-	users    *repositories.UserRepository
-	sessions *repositories.SessionRepository
+	users         *repositories.UserRepository
+	sessions      *repositories.SessionRepository
+	notifications *repositories.NotificationRepository
 }
 
-func NewAuthService(users *repositories.UserRepository, sessions *repositories.SessionRepository) *AuthService {
-	return &AuthService{users: users, sessions: sessions}
+func NewAuthService(users *repositories.UserRepository, sessions *repositories.SessionRepository, notifications *repositories.NotificationRepository) *AuthService {
+	return &AuthService{users: users, sessions: sessions, notifications: notifications}
 }
 
 func (s *AuthService) SetupRequired() (bool, error) {
@@ -94,8 +95,15 @@ func (s *AuthService) ListUsers() ([]models.User, error) {
 }
 
 func (s *AuthService) DeleteUser(id string) error {
-	err := s.sessions.DeleteSessionsForUser(id)
-	if err != nil {
+	if err := s.sessions.DeleteSessionsForUser(id); err != nil {
+		return err
+	}
+
+	if err := s.notifications.DeleteSubscriptionsForUser(id); err != nil {
+		return err
+	}
+
+	if err := s.notifications.DeleteSettingsForUser(id); err != nil {
 		return err
 	}
 
