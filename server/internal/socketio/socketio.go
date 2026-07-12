@@ -3,8 +3,11 @@ package socketio
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"log/slog"
 	"net/http"
+
+	"crosshatch/internal/utils"
 
 	"github.com/zishang520/engine.io/v2/types"
 	"github.com/zishang520/socket.io/v2/socket"
@@ -23,7 +26,12 @@ type SocketIO struct {
 func NewSocketIO(lc fx.Lifecycle) *SocketIO {
 	opts := socket.DefaultServerOptions()
 	opts.SetPath(path)
-	opts.SetCors(&types.Cors{Origin: "*", Credentials: true})
+	opts.SetAllowRequest(func(ctx *types.HttpContext) error {
+		if !utils.AllowedOrigin(ctx.Request()) {
+			return errors.New("origin not allowed")
+		}
+		return nil
+	})
 
 	s := &SocketIO{io: socket.NewServer(nil, opts)}
 

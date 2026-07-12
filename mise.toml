@@ -16,6 +16,7 @@ run = "docker compose up --build"
 [tasks."dev:server"]
 description = "Run the Go server with live reload"
 dir = "server"
+env = { WS_ALLOWED_ORIGINS = "http://localhost:5173" }
 run = "air"
 
 [tasks."dev:web"]

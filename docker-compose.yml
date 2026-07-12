@@ -19,6 +19,8 @@ services:
       - PORT=3000
       - GO2RTC_WS_URL=ws://go2rtc:1984
       - GO2RTC_API_URL=http://go2rtc:1984
+      # Trust the Vite dev server for Websocket connections (CORS).
+      - WS_ALLOWED_ORIGINS=http://localhost:5173
     volumes:
       - ./server:/app/server
       - go-build-cache:/root/.cache/go-build

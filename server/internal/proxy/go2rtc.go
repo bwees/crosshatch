@@ -9,6 +9,8 @@ import (
 	"os"
 	"time"
 
+	"crosshatch/internal/utils"
+
 	"github.com/gorilla/websocket"
 	"go.uber.org/fx"
 )
@@ -51,7 +53,7 @@ func NewGo2RTCProxy() *Go2RTCProxy {
 	return &Go2RTCProxy{
 		target: target,
 		upgrader: websocket.Upgrader{
-			CheckOrigin: func(r *http.Request) bool { return true },
+			CheckOrigin: utils.AllowedOrigin,
 		},
 		dialer: websocket.DefaultDialer,
 	}
