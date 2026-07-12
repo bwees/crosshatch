@@ -5,10 +5,12 @@
 	import * as Collapsible from '$lib/components/ui/collapsible/index.js';
 	import { useSidebar } from '$lib/components/ui/sidebar/context.svelte.js';
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
+	import { auth } from '$lib/managers/auth.svelte';
 	import { printerManager } from '$lib/managers/printers.manager.svelte';
 	import { cn } from '$lib/utils';
+	import { logoutAndRedirect } from '$lib/utils/auth';
 	import { stateColor, stateMessage } from '$lib/utils/printer_status';
-	import { ChevronRight, Grid, Printer } from '@lucide/svelte';
+	import { ChevronRight, Grid, LogOut, Printer, Users } from '@lucide/svelte';
 	import type { ComponentProps } from 'svelte';
 
 	let { ref = $bindable(null), ...restProps }: ComponentProps<typeof Sidebar.Root> = $props();
@@ -20,6 +22,11 @@
 	function navigate(path: string) {
 		if (sidebar.isMobile) sidebar.setOpenMobile(false);
 		goto(path);
+	}
+
+	async function handleLogout() {
+		printerManager.reset();
+		await logoutAndRedirect();
 	}
 </script>
 
@@ -65,7 +72,7 @@
 							{@const printerState = printerManager.printerState.get(serial)}
 							<Sidebar.MenuSubItem>
 								<Sidebar.MenuSubButton
-									onclick={() => navigate(resolve('/printer/[id]', { id: printer.serial }))}
+									onclick={() => navigate(resolve('/(app)/printer/[id]', { id: printer.serial }))}
 									class="h-auto cursor-pointer py-1"
 								>
 									<div class="flex items-center">
@@ -88,8 +95,28 @@
 					</Sidebar.MenuSub>
 				</Collapsible.Content>
 			</Collapsible.Root>
+
+			{#if auth.user?.isAdmin}
+				<Sidebar.MenuItem class="list-none">
+					<Sidebar.MenuButton onclick={() => navigate('/users')} class="cursor-pointer">
+						<Users />
+						<span>Users</span>
+					</Sidebar.MenuButton>
+				</Sidebar.MenuItem>
+			{/if}
 		</Sidebar.Group>
 	</Sidebar.Content>
+
+	<Sidebar.Footer>
+		<Sidebar.Menu>
+			<Sidebar.MenuItem>
+				<Sidebar.MenuButton onclick={handleLogout} class="cursor-pointer">
+					<LogOut />
+					<span>Log out{auth.user ? ` (${auth.user.username})` : ''}</span>
+				</Sidebar.MenuButton>
+			</Sidebar.MenuItem>
+		</Sidebar.Menu>
+	</Sidebar.Footer>
 	<Sidebar.Rail />
 </Sidebar.Root>
 

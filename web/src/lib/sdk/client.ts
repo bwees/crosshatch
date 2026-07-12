@@ -12,13 +12,14 @@ export const defaults: Oazapfts.Defaults<Oazapfts.CustomHeaders> = {
 };
 const oazapfts = Oazapfts.runtime(defaults);
 export const servers = {};
-export type Filament = {
-    brand: string;
-    name: string;
-    nozzleTempMax: number;
-    nozzleTempMin: number;
-    trayInfoIdx: string;
-    trayType: string;
+export type LoginDto = {
+    password: string;
+    username: string;
+};
+export type UserDto = {
+    id?: number;
+    isAdmin?: boolean;
+    username?: string;
 };
 export type HttpError = {
     /** Human readable error message */
@@ -41,6 +42,23 @@ export type HttpError = {
     /** URL of the error type. Can be used to lookup the error in a documentation */
     "type"?: string;
 };
+export type UnknownInterface = any;
+export type SetupStatusDto = {
+    setupRequired?: boolean;
+};
+export type CreateUserDto = {
+    isAdmin?: boolean;
+    password: string;
+    username: string;
+};
+export type Filament = {
+    brand: string;
+    name: string;
+    nozzleTempMax: number;
+    nozzleTempMin: number;
+    trayInfoIdx: string;
+    trayType: string;
+};
 export type Printer = {
     accessCode: string;
     hostIp: string;
@@ -53,7 +71,6 @@ export type CreatePrinterDto = {
     name: string;
     serial: string;
 };
-export type UnknownInterface = any;
 export type UpdatePrinterDto = {
     accessCode?: string;
     hostIp?: string;
@@ -146,6 +163,131 @@ export type PrinterStatus = {
     state: string;
     timeRemaining?: number;
 };
+/**
+ * func3
+ */
+export function login(loginDto: LoginDto, { accept }: {
+    accept?: string;
+} = {}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.ok(oazapfts.fetchJson<{
+        status: 200;
+        data: UserDto;
+    } | {
+        status: 400;
+        data: HttpError;
+    } | {
+        status: 500;
+        data: HttpError;
+    } | {
+        status: number;
+    }>("/api/auth/login", oazapfts.json({
+        ...opts,
+        method: "POST",
+        body: loginDto,
+        headers: oazapfts.mergeHeaders(opts?.headers, {
+            Accept: accept
+        })
+    })));
+}
+/**
+ * func4
+ */
+export function logout({ accept }: {
+    accept?: string;
+} = {}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.ok(oazapfts.fetchJson<{
+        status: 204;
+        data: UnknownInterface;
+    } | {
+        status: 400;
+        data: HttpError;
+    } | {
+        status: 500;
+        data: HttpError;
+    } | {
+        status: number;
+    }>("/api/auth/logout", {
+        ...opts,
+        method: "POST",
+        headers: oazapfts.mergeHeaders(opts?.headers, {
+            Accept: accept
+        })
+    }));
+}
+/**
+ * func5
+ */
+export function getCurrentUser({ accept }: {
+    accept?: string;
+} = {}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.ok(oazapfts.fetchJson<{
+        status: 200;
+        data: UserDto;
+    } | {
+        status: 400;
+        data: HttpError;
+    } | {
+        status: 500;
+        data: HttpError;
+    } | {
+        status: number;
+    }>("/api/auth/me", {
+        ...opts,
+        headers: oazapfts.mergeHeaders(opts?.headers, {
+            Accept: accept
+        })
+    }));
+}
+/**
+ * func1
+ */
+export function getSetupStatus({ accept }: {
+    accept?: string;
+} = {}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.ok(oazapfts.fetchJson<{
+        status: 200;
+        data: SetupStatusDto;
+    } | {
+        status: 400;
+        data: HttpError;
+    } | {
+        status: 500;
+        data: HttpError;
+    } | {
+        status: number;
+    }>("/api/auth/setup", {
+        ...opts,
+        headers: oazapfts.mergeHeaders(opts?.headers, {
+            Accept: accept
+        })
+    }));
+}
+/**
+ * func2
+ */
+export function setup(createUserDto: CreateUserDto, { accept }: {
+    accept?: string;
+} = {}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.ok(oazapfts.fetchJson<{
+        status: 200;
+        data: UserDto;
+    } | {
+        status: 400;
+        data: HttpError;
+    } | {
+        status: 500;
+        data: HttpError;
+    } | {
+        status: number;
+    }>("/api/auth/setup", oazapfts.json({
+        ...opts,
+        method: "POST",
+        body: createUserDto,
+        headers: oazapfts.mergeHeaders(opts?.headers, {
+            Accept: accept
+        })
+    })));
+}
 /**
  * func1
  */
@@ -545,6 +687,81 @@ export function unloadMaterial(serial: string, amsId: string, { accept }: {
     }>(`/api/printer/${encodeURIComponent(serial)}/unload/${encodeURIComponent(amsId)}`, {
         ...opts,
         method: "POST",
+        headers: oazapfts.mergeHeaders(opts?.headers, {
+            Accept: accept
+        })
+    }));
+}
+/**
+ * func1
+ */
+export function getUsers({ accept }: {
+    accept?: string;
+} = {}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.ok(oazapfts.fetchJson<{
+        status: 200;
+        data: UserDto[];
+    } | {
+        status: 400;
+        data: HttpError;
+    } | {
+        status: 500;
+        data: HttpError;
+    } | {
+        status: number;
+    }>("/api/users/", {
+        ...opts,
+        headers: oazapfts.mergeHeaders(opts?.headers, {
+            Accept: accept
+        })
+    }));
+}
+/**
+ * func2
+ */
+export function createUser(createUserDto: CreateUserDto, { accept }: {
+    accept?: string;
+} = {}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.ok(oazapfts.fetchJson<{
+        status: 201;
+        data: UserDto;
+    } | {
+        status: 400;
+        data: HttpError;
+    } | {
+        status: 500;
+        data: HttpError;
+    } | {
+        status: number;
+    }>("/api/users/", oazapfts.json({
+        ...opts,
+        method: "POST",
+        body: createUserDto,
+        headers: oazapfts.mergeHeaders(opts?.headers, {
+            Accept: accept
+        })
+    })));
+}
+/**
+ * func3
+ */
+export function deleteUser(id: string, { accept }: {
+    accept?: string;
+} = {}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.ok(oazapfts.fetchJson<{
+        status: 204;
+        data: UnknownInterface;
+    } | {
+        status: 400;
+        data: HttpError;
+    } | {
+        status: 500;
+        data: HttpError;
+    } | {
+        status: number;
+    }>(`/api/users/${encodeURIComponent(id)}`, {
+        ...opts,
+        method: "DELETE",
         headers: oazapfts.mergeHeaders(opts?.headers, {
             Accept: accept
         })

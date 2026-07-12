@@ -21,7 +21,7 @@ type Controllers struct {
 	All []controllers.Controller `group:"controllers"`
 }
 
-func NewServer(lc fx.Lifecycle, controllers Controllers) *fuego.Server {
+func NewServer(lc fx.Lifecycle, controllers Controllers, authMiddleware *controllers.AuthMiddleware) *fuego.Server {
 	addr := ":3000"
 	if port := os.Getenv("PORT"); port != "" {
 		addr = ":" + port
@@ -54,6 +54,8 @@ func NewServer(lc fx.Lifecycle, controllers Controllers) *fuego.Server {
 		}
 		return nil
 	})
+
+	fuego.Use(server, authMiddleware.Handler)
 
 	api := fuego.Group(server, "/api")
 	for _, controller := range controllers.All {

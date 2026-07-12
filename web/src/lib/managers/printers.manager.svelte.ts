@@ -4,7 +4,8 @@ import { SvelteMap } from 'svelte/reactivity';
 import { BambuPrinterManager } from './bambu_printer.svelte';
 
 class PrinterManager {
-	private stateSocket!: Socket;
+	private stateSocket?: Socket;
+	private initialized = false;
 	private printerManagers: Map<string, BambuPrinterManager> = new Map();
 
 	printers: Map<string, Printer> = new SvelteMap();
@@ -21,22 +22,35 @@ class PrinterManager {
 	}
 
 	async initialize() {
+		if (this.initialized) return;
+		this.initialized = true;
+
 		await this.refreshPrinters();
 
-		this.stateSocket = io({
+		const socket = io({
 			path: '/api/ws',
 			transports: ['websocket']
 		});
+		this.stateSocket = socket;
 
-		this.stateSocket.on('connect', () => {
-			console.log('Connected:', this.stateSocket.id);
+		socket.on('connect', () => {
+			console.log('Connected:', socket.id);
 		});
 
-		this.stateSocket.on('printer.status', (data) => this.handleMqttReport(JSON.parse(data)));
+		socket.on('printer.status', (data) => this.handleMqttReport(JSON.parse(data)));
 	}
 
 	private handleMqttReport(data: PrinterStatus & { serial: string }) {
 		this.printerState.set(data.serial, data);
+	}
+
+	reset() {
+		this.stateSocket?.disconnect();
+		this.stateSocket = undefined;
+		this.initialized = false;
+		this.printers.clear();
+		this.printerManagers.clear();
+		this.printerState.clear();
 	}
 }
 

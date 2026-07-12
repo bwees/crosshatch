@@ -6,4 +6,6 @@ var Module = fx.Provide(
 	NewPrinterRepository,
 	NewCameraRepository,
 	NewFilamentRepository,
+	NewUserRepository,
+	NewSessionRepository,
 )

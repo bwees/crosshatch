@@ -6,3 +6,8 @@ client.defaults.baseUrl = apiBaseUrl;
 
 export * from './client';
 export { apiBaseUrl };
+
+export function apiErrorMessage(error: unknown, fallback = 'Something went wrong. Please try again.'): string {
+	const data = (error as { data?: { detail?: string; title?: string } })?.data;
+	return data?.detail ?? data?.title ?? fallback;
+}

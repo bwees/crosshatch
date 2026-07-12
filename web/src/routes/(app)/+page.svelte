@@ -25,7 +25,7 @@
 	{#each printerManager.printers.entries() as [serial, printer] (serial)}
 		<Card
 			class="w-full cursor-pointer p-4 transition-colors hover:bg-secondary/70"
-			onclick={() => goto(resolve('/printer/[id]', { id: printer.serial }))}
+			onclick={() => goto(resolve('/(app)/printer/[id]', { id: printer.serial }))}
 		>
 			<div class="flex items-center gap-4">
 				<div class="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">

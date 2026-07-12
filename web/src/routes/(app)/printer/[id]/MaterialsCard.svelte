@@ -5,7 +5,7 @@
 	import { cn } from '$lib/utils';
 	import { DropletIcon, SunIcon } from '@lucide/svelte';
 	import { Duration } from 'luxon';
-	import Separator from '../../../lib/components/ui/separator/separator.svelte';
+	import Separator from '$lib/components/ui/separator/separator.svelte';
 	import DryingDialog from './DryingDialog.svelte';
 	import FilamentDialog from './FilamentDialog.svelte';
 

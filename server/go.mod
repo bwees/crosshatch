@@ -11,6 +11,7 @@ require (
 	github.com/zishang520/engine.io/v2 v2.5.0
 	github.com/zishang520/socket.io/v2 v2.5.0
 	go.uber.org/fx v1.24.0
+	golang.org/x/crypto v0.51.0
 	gorm.io/gorm v1.31.1
 )
 
@@ -54,7 +55,6 @@ require (
 	go.uber.org/mock v0.5.0 // indirect
 	go.uber.org/multierr v1.10.0 // indirect
 	go.uber.org/zap v1.26.0 // indirect
-	golang.org/x/crypto v0.51.0 // indirect
 	golang.org/x/mod v0.36.0 // indirect
 	golang.org/x/net v0.54.0 // indirect
 	golang.org/x/sync v0.21.0 // indirect
