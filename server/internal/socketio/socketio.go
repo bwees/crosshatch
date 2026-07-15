@@ -20,7 +20,7 @@ type EmitFunc func(event string, payload any)
 
 type SocketIO struct {
 	io        *socket.Server
-	onConnect func(emit EmitFunc)
+	onConnect []func(emit EmitFunc)
 }
 
 func NewSocketIO(lc fx.Lifecycle) *SocketIO {
@@ -37,10 +37,11 @@ func NewSocketIO(lc fx.Lifecycle) *SocketIO {
 
 	s.io.On("connection", func(clients ...any) {
 		client := clients[0].(*socket.Socket)
-		if s.onConnect != nil {
-			s.onConnect(func(event string, payload any) {
-				emitTo(client, event, payload)
-			})
+		emit := func(event string, payload any) {
+			emitTo(client, event, payload)
+		}
+		for _, fn := range s.onConnect {
+			fn(emit)
 		}
 	})
 
@@ -55,7 +56,7 @@ func NewSocketIO(lc fx.Lifecycle) *SocketIO {
 }
 
 func (s *SocketIO) OnConnect(fn func(emit EmitFunc)) {
-	s.onConnect = fn
+	s.onConnect = append(s.onConnect, fn)
 }
 
 func (s *SocketIO) Emit(event string, payload any) {
