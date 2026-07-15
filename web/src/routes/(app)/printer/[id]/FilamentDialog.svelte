@@ -8,6 +8,7 @@
 	import { setFilament, type Filament, type Printer, type PrinterStatus } from '$lib/sdk';
 	import { Spinner } from '$lib/components/ui/spinner';
 	import { cn } from '$lib/utils';
+	import { toBambuColor, toHexInput } from '$lib/utils/bambu-color';
 	import { ChevronDownIcon } from '@lucide/svelte';
 	import { onMount } from 'svelte';
 
@@ -33,16 +34,6 @@
 
 	onMount(() => filamentManager.init());
 
-	function toHexInput(c?: string): string {
-		if (!c) return FILAMENT_COLORS[0];
-		const hex = c.length >= 6 ? c.slice(0, 6) : c;
-		return `#${hex.toUpperCase()}`;
-	}
-
-	function toBambuColor(hex: string): string {
-		return (hex.replace('#', '') + 'FF').toUpperCase();
-	}
-
 	// Prefer an exact match on the reported filament id, falling back to the
 	// material family when the loaded spool isn't a known preset.
 	const defaultMatch = $derived.by(() => {
@@ -61,7 +52,7 @@
 	const presetsForBrand = $derived(filamentManager.presets.filter((p) => p.brand === brand));
 	const selectedIdx = $derived(idxOverride ?? defaultMatch?.trayInfoIdx);
 	const selectedPreset = $derived(presetsForBrand.find((p) => p.trayInfoIdx === selectedIdx));
-	const color = $derived(colorOverride ?? toHexInput(tray?.color));
+	const color = $derived(colorOverride ?? toHexInput(tray?.color, FILAMENT_COLORS[0]));
 
 	$effect(() => {
 		if (!open) {

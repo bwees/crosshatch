@@ -3,6 +3,7 @@
 	import Card from '$lib/components/ui/card/card.svelte';
 	import { unloadMaterial, type Printer, type PrinterStatus } from '$lib/sdk';
 	import { cn } from '$lib/utils';
+	import { bambuColorToCss, isLightColor } from '$lib/utils/bambu-color';
 	import { DropletIcon, SunIcon } from '@lucide/svelte';
 	import { Duration } from 'luxon';
 	import Separator from '$lib/components/ui/separator/separator.svelte';
@@ -49,22 +50,6 @@
 		if (externalSpool?.loaded) return EXTERNAL_SPOOL_AMS_ID;
 		return undefined;
 	});
-
-	function bambuColorToCss(color?: string): string {
-		if (!color) return 'transparent';
-		const hex = color.length === 8 ? color.slice(0, 6) : color;
-		return `#${hex}`;
-	}
-
-	function isLightColor(color?: string): boolean {
-		if (!color) return true;
-		const hex = color.length === 8 ? color.slice(0, 6) : color;
-		if (hex.length !== 6) return true;
-		const r = parseInt(hex.slice(0, 2), 16);
-		const g = parseInt(hex.slice(2, 4), 16);
-		const b = parseInt(hex.slice(4, 6), 16);
-		return r * 0.299 + g * 0.587 + b * 0.114 > 150;
-	}
 
 	async function unload() {
 		if (currentlyLoadedUnitID === undefined) return;
