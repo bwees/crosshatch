@@ -8,6 +8,16 @@ declare global {
 		// interface PageState {}
 		// interface Platform {}
 	}
+
+	// Not yet in lib.dom; supported on iOS Safari for MSE playback.
+	interface ManagedMediaSourceCtor {
+		new (): MediaSource;
+		isTypeSupported(type: string): boolean;
+	}
+
+	interface Window {
+		ManagedMediaSource?: ManagedMediaSourceCtor;
+	}
 }
 
 export {};
