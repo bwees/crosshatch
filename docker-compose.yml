@@ -7,7 +7,7 @@ services:
       - "8555:8555"         # webrtc
     restart: unless-stopped
     environment:
-      - TZ=America/Chicago
+      - TZ=${TZ:-UTC}
 
   server:
     build:
@@ -20,8 +20,9 @@ services:
       - GO2RTC_WS_URL=ws://go2rtc:1984
       - GO2RTC_API_URL=http://go2rtc:1984
       - DATA_DIR=/data
-      # Trust the Vite dev server for Websocket connections (CORS).
-      - WS_ALLOWED_ORIGINS=http://localhost:5173,https://brandon-macbook-pro.tail72746.ts.net
+      # Trust the Vite dev server for Websocket connections (CORS). Set
+      # WS_ALLOWED_ORIGINS in a local .env to add your own origins.
+      - WS_ALLOWED_ORIGINS=${WS_ALLOWED_ORIGINS:-http://localhost:5173}
     volumes:
       - ./server:/app/server
       - ./docker/data:/data
