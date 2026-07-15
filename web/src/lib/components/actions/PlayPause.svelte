@@ -9,7 +9,7 @@
 	};
 
 	let { printerSerial = $bindable() }: Props = $props();
-	let printerState = $derived(printerManager.printerState.get(printerSerial)!);
+	let printerState = $derived(printerManager.printerState.get(printerSerial));
 
 	async function resume() {
 		if (!printerSerial) return;
