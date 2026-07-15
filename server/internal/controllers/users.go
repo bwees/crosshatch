@@ -1,6 +1,8 @@
 package controllers
 
 import (
+	"context"
+
 	"crosshatch/internal/dtos"
 	"crosshatch/internal/services"
 
@@ -11,8 +13,8 @@ type UsersController struct {
 	svc *services.AuthService
 }
 
-func (c *UsersController) requireAdmin(ctx fuego.ContextNoBody) error {
-	user := userFromContext(ctx.Request().Context())
+func (c *UsersController) requireAdmin(ctx context.Context) error {
+	user := userFromContext(ctx)
 	if user == nil || !user.IsAdmin {
 		return services.ErrForbidden
 	}
@@ -23,7 +25,7 @@ func (c *UsersController) Register(api *fuego.Server) {
 	route := fuego.Group(api, "/users")
 
 	fuego.Get(route, "/", func(ctx fuego.ContextNoBody) ([]dtos.UserDto, error) {
-		if err := c.requireAdmin(ctx); err != nil {
+		if err := c.requireAdmin(ctx.Request().Context()); err != nil {
 			return nil, err
 		}
 
@@ -42,9 +44,8 @@ func (c *UsersController) Register(api *fuego.Server) {
 	)
 
 	fuego.Post(route, "/", func(ctx fuego.ContextWithBody[dtos.CreateUserDto]) (dtos.UserDto, error) {
-		user := userFromContext(ctx.Request().Context())
-		if user == nil || !user.IsAdmin {
-			return dtos.UserDto{}, services.ErrForbidden
+		if err := c.requireAdmin(ctx.Request().Context()); err != nil {
+			return dtos.UserDto{}, err
 		}
 
 		dto, err := ctx.Body()
@@ -63,7 +64,7 @@ func (c *UsersController) Register(api *fuego.Server) {
 	)
 
 	fuego.Delete(route, "/{id}", func(ctx fuego.ContextNoBody) (any, error) {
-		if err := c.requireAdmin(ctx); err != nil {
+		if err := c.requireAdmin(ctx.Request().Context()); err != nil {
 			return nil, err
 		}
 
