@@ -34,8 +34,6 @@
 		error = '';
 		loading = true;
 
-		console.log('Creating printer with', { serial, name, hostIp, accessCode });
-
 		try {
 			await createPrinter({ serial, name, hostIp, accessCode });
 			await printerManager.refreshPrinters();

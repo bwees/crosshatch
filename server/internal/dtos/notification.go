@@ -1,5 +1,13 @@
 package dtos
 
+// NotificationEvent identifies a printer status change worth notifying about.
+type NotificationEvent string
+
+const (
+	EventComplete NotificationEvent = "complete"
+	EventError    NotificationEvent = "error"
+)
+
 type VapidDto struct {
 	PublicKey string `json:"publicKey" validate:"required"`
 }

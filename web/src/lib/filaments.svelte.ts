@@ -6,13 +6,15 @@ class FilamentManager {
 	brands = $derived(new SvelteSet(this.presets.map((p) => p.brand)));
 
 	loading = $state(false);
+	loaded = $state(false);
 
 	async init() {
-		if (this.loading) return;
+		if (this.loading || this.loaded) return;
 		this.loading = true;
 
 		try {
 			this.presets = await getFilaments();
+			this.loaded = true;
 		} finally {
 			this.loading = false;
 		}

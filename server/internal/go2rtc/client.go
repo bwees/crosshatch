@@ -1,20 +1,26 @@
-package repositories
+// Package go2rtc is an HTTP client for managing camera streams on a go2rtc
+// instance (the live-view backend the printers' cameras are published to).
+package go2rtc
 
 import (
+	"crosshatch/internal/config"
 	"crosshatch/internal/dtos"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
-	"os"
+	"time"
+
+	"go.uber.org/fx"
 )
 
-type CameraRepository struct {
+type Client struct {
 	baseURL string
+	client  *http.Client
 }
 
-func (r *CameraRepository) GetStreams() (map[string]dtos.Go2RTCStream, error) {
-	res, err := http.Get(r.baseURL + "/api/streams")
+func (r *Client) GetStreams() (map[string]dtos.Go2RTCStream, error) {
+	res, err := r.client.Get(r.baseURL + "/api/streams")
 	if err != nil {
 		return nil, err
 	}
@@ -28,23 +34,26 @@ func (r *CameraRepository) GetStreams() (map[string]dtos.Go2RTCStream, error) {
 	return streams, nil
 }
 
-func (r *CameraRepository) DeleteStream(id string) error {
+func (r *Client) DeleteStream(id string) error {
 	req, err := http.NewRequest(http.MethodDelete, r.baseURL+"/api/streams/"+id, nil)
 	if err != nil {
 		return err
 	}
 
-	res, err := http.DefaultClient.Do(req)
+	res, err := r.client.Do(req)
 	if err != nil {
 		return err
 	}
-
 	defer res.Body.Close()
+
+	if res.StatusCode < 200 || res.StatusCode >= 300 {
+		return fmt.Errorf("failed to delete stream for printer %s: %s", id, res.Status)
+	}
 
 	return nil
 }
 
-func (r *CameraRepository) AddStream(id string, streamURL string) error {
+func (r *Client) AddStream(id string, streamURL string) error {
 	encodedURL := url.QueryEscape(streamURL)
 
 	req, err := http.NewRequest(
@@ -56,20 +65,20 @@ func (r *CameraRepository) AddStream(id string, streamURL string) error {
 		return err
 	}
 
-	res, err := http.DefaultClient.Do(req)
+	res, err := r.client.Do(req)
 	if err != nil {
 		return err
 	}
 	defer res.Body.Close()
 
 	if res.StatusCode < 200 || res.StatusCode >= 300 {
-		return fmt.Errorf("Failed to create stream for printer %s: %s", id, res.Status)
+		return fmt.Errorf("failed to create stream for printer %s: %s", id, res.Status)
 	}
 
 	return nil
 }
 
-func (r *CameraRepository) UpdateStream(id string, streamURL string) error {
+func (r *Client) UpdateStream(id string, streamURL string) error {
 	encodedURL := url.QueryEscape(streamURL)
 	req, err := http.NewRequest(
 		http.MethodPatch,
@@ -80,24 +89,24 @@ func (r *CameraRepository) UpdateStream(id string, streamURL string) error {
 		return err
 	}
 
-	res, err := http.DefaultClient.Do(req)
+	res, err := r.client.Do(req)
 	if err != nil {
 		return err
 	}
 	defer res.Body.Close()
 
 	if res.StatusCode < 200 || res.StatusCode >= 300 {
-		return fmt.Errorf("Failed to update stream for printer %s: %s", id, res.Status)
+		return fmt.Errorf("failed to update stream for printer %s: %s", id, res.Status)
 	}
 
 	return nil
 }
 
-func NewCameraRepository() *CameraRepository {
-	baseURL := os.Getenv("GO2RTC_API_URL")
-	if baseURL == "" {
-		baseURL = "http://localhost:1984"
+func NewClient() *Client {
+	return &Client{
+		baseURL: config.Go2RTCAPIURL(),
+		client:  &http.Client{Timeout: 10 * time.Second},
 	}
-
-	return &CameraRepository{baseURL: baseURL}
 }
+
+var Module = fx.Provide(NewClient)

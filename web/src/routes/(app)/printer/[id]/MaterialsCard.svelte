@@ -3,6 +3,7 @@
 	import Card from '$lib/components/ui/card/card.svelte';
 	import { unloadMaterial, type Printer, type PrinterStatus } from '$lib/sdk';
 	import { cn } from '$lib/utils';
+	import { bambuColorToCss, isLightColor } from '$lib/utils/bambu-color';
 	import { DropletIcon, SunIcon } from '@lucide/svelte';
 	import { Duration } from 'luxon';
 	import Separator from '$lib/components/ui/separator/separator.svelte';
@@ -11,6 +12,9 @@
 
 	type AMSUnit = PrinterStatus['ams'][number];
 	type Tray = AMSUnit['trays'][number];
+
+	const EXTERNAL_SPOOL_AMS_ID = 255;
+	const EXTERNAL_SPOOL_TRAY_ID = 254;
 
 	type Props = {
 		state: PrinterStatus | undefined;
@@ -40,29 +44,15 @@
 
 	let dryingUnit = $derived(ams.find((unit) => unit.id === dryingTarget?.amsId));
 
-	let currentlyLoadedUnitID = $derived(
-		ams.find((unit) => unit.trays.some((tray) => tray.loaded))?.id ??
-			(externalSpool?.loaded ? 255 : 0)
-	);
-
-	function bambuColorToCss(color?: string): string {
-		if (!color) return 'transparent';
-		const hex = color.length === 8 ? color.slice(0, 6) : color;
-		return `#${hex}`;
-	}
-
-	function isLightColor(color?: string): boolean {
-		if (!color) return true;
-		const hex = color.length === 8 ? color.slice(0, 6) : color;
-		if (hex.length !== 6) return true;
-		const r = parseInt(hex.slice(0, 2), 16);
-		const g = parseInt(hex.slice(2, 4), 16);
-		const b = parseInt(hex.slice(4, 6), 16);
-		return r * 0.299 + g * 0.587 + b * 0.114 > 150;
-	}
+	let currentlyLoadedUnitID = $derived.by(() => {
+		const loadedUnit = ams.find((unit) => unit.trays.some((tray) => tray.loaded));
+		if (loadedUnit) return loadedUnit.id;
+		if (externalSpool?.loaded) return EXTERNAL_SPOOL_AMS_ID;
+		return undefined;
+	});
 
 	async function unload() {
-		if (!currentlyLoadedUnitID) return;
+		if (currentlyLoadedUnitID === undefined) return;
 		await unloadMaterial(printer?.serial ?? '', currentlyLoadedUnitID.toString());
 	}
 </script>
@@ -73,7 +63,7 @@
 		<Button
 			variant="outline"
 			size="sm"
-			disabled={!currentlyLoadedUnitID}
+			disabled={currentlyLoadedUnitID === undefined}
 			color="primary"
 			onclick={unload}>Unload</Button
 		>
@@ -164,8 +154,8 @@
 			<div class="w-1/4">
 				{@render trayCard(tray, {
 					slotLabel: '',
-					amsId: 255,
-					trayId: 254,
+					amsId: EXTERNAL_SPOOL_AMS_ID,
+					trayId: EXTERNAL_SPOOL_TRAY_ID,
 					title: 'External Spool'
 				})}
 			</div>

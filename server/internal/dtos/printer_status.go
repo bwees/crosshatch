@@ -8,6 +8,13 @@ import (
 // PrinterStage mirrors the numeric stage codes reported by the printer.
 type PrinterStage int
 
+// Gcode states reported by the printer in its "gcode_state" field.
+const (
+	GcodeRunning = "RUNNING"
+	GcodeFinish  = "FINISH"
+	GcodeFailed  = "FAILED"
+)
+
 type Temperature struct {
 	Temperature       float64 `json:"temperature" validate:"required"`
 	TargetTemperature float64 `json:"targetTemperature" validate:"required"`

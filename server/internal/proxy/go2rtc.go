@@ -6,9 +6,9 @@ import (
 	"log/slog"
 	"net/http"
 	"net/url"
-	"os"
 	"time"
 
+	"crosshatch/internal/config"
 	"crosshatch/internal/utils"
 
 	"github.com/gorilla/websocket"
@@ -39,10 +39,7 @@ type Go2RTCProxy struct {
 // NewGo2RTCProxy reads the upstream URL from GO2RTC_WS_URL, falling back to
 // defaultTarget.
 func NewGo2RTCProxy() *Go2RTCProxy {
-	raw := os.Getenv("GO2RTC_WS_URL")
-	if raw == "" {
-		raw = defaultTarget
-	}
+	raw := config.Go2RTCWSURL()
 
 	target, err := url.Parse(raw)
 	if err != nil {

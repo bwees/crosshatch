@@ -8,7 +8,6 @@
 		activeMode?: string;
 	}
 
-	// eslint-disable-next-line no-useless-assignment
 	let { url, mode = 'webrtc,mse', activeMode = $bindable('negotiating') }: Props = $props();
 
 	let loading = $state(true);
@@ -39,6 +38,23 @@
 		loading = false;
 		error = false;
 		clearTimeout(timeoutId);
+	}
+
+	function playMuted(el: HTMLVideoElement) {
+		el.play().catch(() => {
+			el.muted = true;
+			el.play().catch(console.warn);
+		});
+	}
+
+	// WebRTC often hangs in 'connecting' behind NAT/firewalls and never
+	// transitions to 'failed', so once MSE is playable we tear WebRTC down
+	// rather than wait on it.
+	function commitToMSE() {
+		pc?.close();
+		pc = null;
+		activeMode = 'mse';
+		markConnected();
 	}
 
 	$effect(() => {
@@ -86,10 +102,6 @@
 			}
 		});
 
-		ws.addEventListener('close', () => {
-			console.log('go2rtc WebSocket closed');
-		});
-
 		return () => {
 			clearTimeout(timeoutId);
 			if (ws) {
@@ -114,9 +126,8 @@
 	) {
 		let ms: MediaSource;
 
-		if ('ManagedMediaSource' in window) {
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			const MMS = (window as any).ManagedMediaSource;
+		if (window.ManagedMediaSource) {
+			const MMS = window.ManagedMediaSource;
 			ms = new MMS();
 			// On iOS Safari, ManagedMediaSource defers `sourceopen` until the
 			// element actually demands data — the `videoEl.play()` below forces
@@ -130,8 +141,7 @@
 				{ once: true }
 			);
 			videoEl.disableRemotePlayback = true;
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			(videoEl as any).srcObject = ms;
+			videoEl.srcObject = ms;
 		} else {
 			ms = new MediaSource();
 			ms.addEventListener(
@@ -151,10 +161,7 @@
 			videoEl.srcObject = null;
 		}
 
-		videoEl.play().catch(() => {
-			videoEl.muted = true;
-			videoEl.play().catch(console.warn);
-		});
+		playMuted(videoEl);
 
 		onmessage['mse'] = (msg) => {
 			if (msg.type !== 'mse') return;
@@ -199,14 +206,9 @@
 				videoEl.playbackRate = Math.max(end - videoEl.currentTime, 0.1);
 
 				// MSE is producing playable data. If WebRTC hasn't already taken
-				// over, commit to MSE — WebRTC often hangs in 'connecting' behind
-				// NAT/firewalls and never transitions to 'failed', so waiting on
-				// it would just time out despite MSE working fine.
+				// over, commit to MSE.
 				if (activeMode !== 'webrtc' && pc && pc.connectionState !== 'connected') {
-					pc.close();
-					pc = null;
-					activeMode = 'mse';
-					markConnected();
+					commitToMSE();
 				}
 			}
 		});
@@ -266,10 +268,7 @@
 
 						if (rtcPriority >= msePriority) {
 							videoEl.srcObject = stream;
-							videoEl.play().catch(() => {
-								videoEl.muted = true;
-								videoEl.play().catch(console.warn);
-							});
+							playMuted(videoEl);
 
 							activeMode = 'webrtc';
 							markConnected();
@@ -281,10 +280,7 @@
 							}
 						} else {
 							// MSE won — close WebRTC
-							activeMode = 'mse';
-							markConnected();
-							pc?.close();
-							pc = null;
+							commitToMSE();
 						}
 
 						video2.srcObject = null;
@@ -293,11 +289,11 @@
 				);
 				video2.srcObject = new MediaStream(tracks);
 			} else if (pc?.connectionState === 'failed' || pc?.connectionState === 'disconnected') {
-				pc.close();
-				pc = null;
 				if (mseCodecs) {
-					activeMode = 'mse';
-					markConnected();
+					commitToMSE();
+				} else {
+					pc.close();
+					pc = null;
 				}
 			}
 		});
@@ -312,11 +308,11 @@
 					break;
 				case 'error':
 					if (msg.value.includes('webrtc/offer')) {
-						pc?.close();
-						pc = null;
 						if (mseCodecs) {
-							activeMode = 'mse';
-							markConnected();
+							commitToMSE();
+						} else {
+							pc?.close();
+							pc = null;
 						}
 					}
 					break;

@@ -22,3 +22,9 @@ jobs:
 
       - name: Fail if formatting changed files
         run: git diff --exit-code
+
+      - name: Lint
+        run: mise run lint
+
+      - name: Type-check
+        run: mise run check

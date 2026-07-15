@@ -9,6 +9,7 @@ import (
 	"reflect"
 	"strings"
 
+	"crosshatch/internal/config"
 	"crosshatch/internal/controllers"
 
 	"github.com/getkin/kin-openapi/openapi3"
@@ -22,10 +23,7 @@ type Controllers struct {
 }
 
 func NewServer(lc fx.Lifecycle, controllers Controllers, authMiddleware *controllers.AuthMiddleware) *fuego.Server {
-	addr := ":3000"
-	if port := os.Getenv("PORT"); port != "" {
-		addr = ":" + port
-	}
+	addr := ":" + config.Port()
 
 	server := fuego.NewServer(
 		fuego.WithLoggingMiddleware(fuego.LoggingConfig{

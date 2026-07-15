@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 
 	"crosshatch/internal/dtos"
@@ -25,20 +26,19 @@ type pushPayload struct {
 	Tag           string `json:"tag"`
 }
 
-// classifyTransition maps a status change to a notification event. It returns
-// ("complete"|"error", true) when the transition warrants a notification, and
-// ("", false) otherwise.
-func classifyTransition(prev, next *dtos.PrinterStatus) (string, bool) {
+// classifyTransition maps a status change to a notification event. The second
+// return is true when the transition warrants a notification.
+func classifyTransition(prev, next *dtos.PrinterStatus) (dtos.NotificationEvent, bool) {
 	if next == nil {
 		return "", false
 	}
 
-	if prev != nil && prev.State == "RUNNING" && next.State == "FINISH" {
-		return "complete", true
+	if prev != nil && prev.State == dtos.GcodeRunning && next.State == dtos.GcodeFinish {
+		return dtos.EventComplete, true
 	}
 
-	if next.State == "FAILED" && (prev == nil || prev.State != "FAILED") {
-		return "error", true
+	if next.State == dtos.GcodeFailed && (prev == nil || prev.State != dtos.GcodeFailed) {
+		return dtos.EventError, true
 	}
 
 	return "", false
@@ -60,9 +60,9 @@ func (s *NotificationService) printerName(serial string) string {
 	return serial
 }
 
-// Notify builds and delivers a push notification for the given event
-// ("complete" or "error") to every device subscribed to it for this printer.
-func (s *NotificationService) Notify(serial, event string) {
+// Notify builds and delivers a push notification for the given event to every
+// device subscribed to it for this printer.
+func (s *NotificationService) Notify(serial string, event dtos.NotificationEvent) {
 	name := s.printerName(serial)
 
 	payload := pushPayload{
@@ -70,23 +70,23 @@ func (s *NotificationService) Notify(serial, event string) {
 		Tag:           "crosshatch-" + serial,
 	}
 	switch event {
-	case "complete":
+	case dtos.EventComplete:
 		payload.Title = "Print complete"
 		payload.Body = name + " finished printing"
-	case "error":
+	case dtos.EventError:
 		payload.Title = "Print error"
 		payload.Body = name + " reported an error"
 	}
 
 	body, err := json.Marshal(payload)
 	if err != nil {
-		fmt.Printf("Error marshaling notification payload: %v\n", err)
+		slog.Error("failed to marshal notification payload", "error", err)
 		return
 	}
 
 	subs, err := s.notifications.SubscriptionsForEvent(serial, event)
 	if err != nil {
-		fmt.Printf("Error finding subscriptions for printer %s: %v\n", serial, err)
+		slog.Error("failed to find subscriptions", "serial", serial, "error", err)
 		return
 	}
 
@@ -133,21 +133,21 @@ func (s *NotificationService) send(endpoint, p256dh, auth string, body []byte) {
 		TTL:             60,
 	})
 	if err != nil {
-		fmt.Printf("Error sending web push to %s: %v\n", endpoint, err)
+		slog.Error("failed to send web push", "endpoint", endpoint, "error", err)
 		return
 	}
 	defer res.Body.Close()
 
 	if res.StatusCode == http.StatusNotFound || res.StatusCode == http.StatusGone {
 		if err := s.notifications.DeleteSubscriptionByEndpoint(endpoint); err != nil {
-			fmt.Printf("Error deleting stale subscription %s: %v\n", endpoint, err)
+			slog.Error("failed to delete stale subscription", "endpoint", endpoint, "error", err)
 		}
 		return
 	}
 
 	if res.StatusCode >= 300 {
 		responseBody, _ := io.ReadAll(res.Body)
-		fmt.Printf("Web push to %s rejected: %d %s\n", endpoint, res.StatusCode, string(responseBody))
+		slog.Warn("web push rejected", "endpoint", endpoint, "status", res.StatusCode, "body", string(responseBody))
 	}
 }
 

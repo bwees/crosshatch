@@ -15,15 +15,15 @@ func TestClassifyTransition(t *testing.T) {
 		name      string
 		prev      *dtos.PrinterStatus
 		next      *dtos.PrinterStatus
-		wantEvent string
+		wantEvent dtos.NotificationEvent
 		wantOk    bool
 	}{
-		{"running to finish is complete", status("RUNNING"), status("FINISH"), "complete", true},
-		{"running to failed is error", status("RUNNING"), status("FAILED"), "error", true},
+		{"running to finish is complete", status("RUNNING"), status("FINISH"), dtos.EventComplete, true},
+		{"running to failed is error", status("RUNNING"), status("FAILED"), dtos.EventError, true},
 		{"failed to failed is none", status("FAILED"), status("FAILED"), "", false},
 		{"running to pause is none", status("RUNNING"), status("PAUSE"), "", false},
 		{"nil prev to finish is none", nil, status("FINISH"), "", false},
-		{"nil prev to failed is error", nil, status("FAILED"), "error", true},
+		{"nil prev to failed is error", nil, status("FAILED"), dtos.EventError, true},
 	}
 
 	for _, tc := range cases {

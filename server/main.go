@@ -3,6 +3,7 @@ package main
 import (
 	"crosshatch/internal/controllers"
 	"crosshatch/internal/database"
+	"crosshatch/internal/go2rtc"
 	"crosshatch/internal/proxy"
 	"crosshatch/internal/repositories"
 	"crosshatch/internal/services"
@@ -20,6 +21,7 @@ func main() {
 		repositories.Module,
 		socketio.Module,
 		proxy.Module,
+		go2rtc.Module,
 
 		fx.Invoke(NewServer),
 	)

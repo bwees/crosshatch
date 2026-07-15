@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"math"
 	"strconv"
 	"sync"
@@ -31,9 +32,9 @@ const (
 type StatusUpdateHandler func(serial string, state *dtos.BambuPrintState)
 
 type BambuClient struct {
-	ip        string
-	accesCode string
-	serial    string
+	ip         string
+	accessCode string
+	serial     string
 
 	mqttClient mqtt.Client
 
@@ -62,10 +63,10 @@ func (c *BambuClient) State() *dtos.BambuPrintState {
 }
 
 func (c *BambuClient) onConnect(client mqtt.Client) {
-	fmt.Printf("Connected to Bambu printer %s\n", c.serial)
+	slog.Info("connected to bambu printer", "serial", c.serial)
 
 	if token := client.Subscribe(c.reportTopic(), 0, c.onMessage); token.Wait() && token.Error() != nil {
-		fmt.Printf("Failed to subscribe to %q: %v\n", c.reportTopic(), token.Error())
+		slog.Error("failed to subscribe to report topic", "topic", c.reportTopic(), "error", token.Error())
 	}
 }
 
@@ -74,7 +75,7 @@ func (c *BambuClient) onMessage(_ mqtt.Client, msg mqtt.Message) {
 		Print json.RawMessage `json:"print"`
 	}
 	if err := json.Unmarshal(msg.Payload(), &envelope); err != nil {
-		fmt.Printf("Received invalid MQTT message on %q: %v\n", c.reportTopic(), err)
+		slog.Error("received invalid MQTT message", "topic", c.reportTopic(), "error", err)
 		return
 	}
 
@@ -91,7 +92,7 @@ func (c *BambuClient) onMessage(_ mqtt.Client, msg mqtt.Message) {
 	// replaced wholesale.
 	if err := json.Unmarshal(envelope.Print, c.state); err != nil {
 		c.stateMu.Unlock()
-		fmt.Printf("Failed to decode print state on %q: %v\n", c.reportTopic(), err)
+		slog.Error("failed to decode print state", "topic", c.reportTopic(), "error", err)
 		return
 	}
 	state := c.state
@@ -103,7 +104,7 @@ func (c *BambuClient) onMessage(_ mqtt.Client, msg mqtt.Message) {
 }
 
 func (c *BambuClient) onDisconnect(client mqtt.Client, err error) {
-	fmt.Printf("Disconnected: %v\n", err)
+	slog.Warn("disconnected from bambu printer", "serial", c.serial, "error", err)
 }
 
 func (c *BambuClient) Close() {
@@ -258,10 +259,10 @@ func (c *BambuClient) UnloadMaterial(amsID int) error {
 	})
 }
 
-func NewBambuClient(ip string, accesCode string, serial string, onStatusUpdate StatusUpdateHandler) *BambuClient {
+func NewBambuClient(ip string, accessCode string, serial string, onStatusUpdate StatusUpdateHandler) *BambuClient {
 	client := &BambuClient{
 		ip:             ip,
-		accesCode:      accesCode,
+		accessCode:     accessCode,
 		serial:         serial,
 		onStatusUpdate: onStatusUpdate,
 	}
@@ -270,7 +271,7 @@ func NewBambuClient(ip string, accesCode string, serial string, onStatusUpdate S
 	opts.AddBroker(fmt.Sprintf("mqtts://%s:%d", ip, 8883))
 	opts.SetClientID(fmt.Sprintf("crosshatch-%s", serial))
 	opts.SetUsername("bblp")
-	opts.SetPassword(accesCode)
+	opts.SetPassword(accessCode)
 	opts.SetKeepAlive(60)
 	opts.SetAutoReconnect(true)
 	opts.SetTLSConfig(&tls.Config{InsecureSkipVerify: true})
@@ -282,7 +283,7 @@ func NewBambuClient(ip string, accesCode string, serial string, onStatusUpdate S
 
 	go func() {
 		if token := client.mqttClient.Connect(); token.Wait() && token.Error() != nil {
-			fmt.Printf("Error connecting to MQTT broker: %v\n", token.Error())
+			slog.Error("failed to connect to MQTT broker", "serial", serial, "error", token.Error())
 		}
 	}()
 

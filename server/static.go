@@ -7,11 +7,13 @@ import (
 	"path/filepath"
 	"strings"
 
+	"crosshatch/internal/config"
+
 	"github.com/go-fuego/fuego"
 )
 
 func registerStaticWeb(server *fuego.Server) {
-	root := os.Getenv("WEB_STATIC_PATH")
+	root := config.WebStaticPath()
 	if root == "" {
 		return
 	}

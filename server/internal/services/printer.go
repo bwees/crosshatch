@@ -5,9 +5,11 @@ import (
 	"crosshatch/internal/bambu"
 	"crosshatch/internal/database/models"
 	"crosshatch/internal/dtos"
+	"crosshatch/internal/go2rtc"
 	"crosshatch/internal/repositories"
 	"crosshatch/internal/socketio"
 	"fmt"
+	"log/slog"
 	"sync"
 
 	"go.uber.org/fx"
@@ -15,7 +17,7 @@ import (
 
 type PrinterService struct {
 	printerRepo  *repositories.PrinterRepository
-	cameraRepo   *repositories.CameraRepository
+	camera       *go2rtc.Client
 	filamentRepo *repositories.FilamentRepository
 	socketio     *socketio.SocketIO
 
@@ -123,68 +125,48 @@ func (s *PrinterService) client(serial string) (*bambu.BambuClient, error) {
 	return client, nil
 }
 
-func (s *PrinterService) StopPrint(serial string) error {
+// withClient resolves the Bambu client for a serial and runs fn against it,
+// so the control methods below don't each repeat the lookup-and-check.
+func (s *PrinterService) withClient(serial string, fn func(*bambu.BambuClient) error) error {
 	client, err := s.client(serial)
 	if err != nil {
 		return err
 	}
-	return client.StopPrint()
+	return fn(client)
+}
+
+func (s *PrinterService) StopPrint(serial string) error {
+	return s.withClient(serial, func(c *bambu.BambuClient) error { return c.StopPrint() })
 }
 
 func (s *PrinterService) PausePrint(serial string) error {
-	client, err := s.client(serial)
-	if err != nil {
-		return err
-	}
-	return client.PausePrint()
+	return s.withClient(serial, func(c *bambu.BambuClient) error { return c.PausePrint() })
 }
 
 func (s *PrinterService) ResumePrint(serial string) error {
-	client, err := s.client(serial)
-	if err != nil {
-		return err
-	}
-	return client.ResumePrint()
+	return s.withClient(serial, func(c *bambu.BambuClient) error { return c.ResumePrint() })
 }
 
 func (s *PrinterService) SetLight(serial string, on bool) error {
-	client, err := s.client(serial)
-	if err != nil {
-		return err
-	}
-	return client.SetLight(on)
+	return s.withClient(serial, func(c *bambu.BambuClient) error { return c.SetLight(on) })
 }
 
 func (s *PrinterService) UnloadMaterial(serial string, amsID int) error {
-	client, err := s.client(serial)
-	if err != nil {
-		return err
-	}
-	return client.UnloadMaterial(amsID)
+	return s.withClient(serial, func(c *bambu.BambuClient) error { return c.UnloadMaterial(amsID) })
 }
 
 func (s *PrinterService) StartDrying(serial string, amsID int, dto dtos.StartDryingDto) error {
-	client, err := s.client(serial)
-	if err != nil {
-		return err
-	}
-	return client.StartDrying(amsID, dto.Temperature, dto.Duration, dto.CoolingTemp, dto.Filament, dto.RotateTray)
+	return s.withClient(serial, func(c *bambu.BambuClient) error {
+		return c.StartDrying(amsID, dto.Temperature, dto.Duration, dto.CoolingTemp, dto.Filament, dto.RotateTray)
+	})
 }
 
 func (s *PrinterService) StopDrying(serial string, amsID int) error {
-	client, err := s.client(serial)
-	if err != nil {
-		return err
-	}
-	return client.StopDrying(amsID)
+	return s.withClient(serial, func(c *bambu.BambuClient) error { return c.StopDrying(amsID) })
 }
 
 func (s *PrinterService) SetPrintSpeed(serial string, level int) error {
-	client, err := s.client(serial)
-	if err != nil {
-		return err
-	}
-	return client.SetPrintSpeed(level)
+	return s.withClient(serial, func(c *bambu.BambuClient) error { return c.SetPrintSpeed(level) })
 }
 
 var fanNodes = map[string]int{
@@ -198,19 +180,13 @@ func (s *PrinterService) SetFan(serial string, fan string, speed int) error {
 	if !ok {
 		return fmt.Errorf("unknown fan %q", fan)
 	}
-	client, err := s.client(serial)
-	if err != nil {
-		return err
-	}
-	return client.SetFanSpeed(node, speed)
+	return s.withClient(serial, func(c *bambu.BambuClient) error { return c.SetFanSpeed(node, speed) })
 }
 
 func (s *PrinterService) SetFilament(serial string, dto dtos.SetFilamentDto) error {
-	client, err := s.client(serial)
-	if err != nil {
-		return err
-	}
-	return client.SetFilament(dto.AmsID, dto.TrayID, dto.TrayInfoIdx, dto.TrayColor, dto.TrayType, dto.NozzleTempMin, dto.NozzleTempMax)
+	return s.withClient(serial, func(c *bambu.BambuClient) error {
+		return c.SetFilament(dto.AmsID, dto.TrayID, dto.TrayInfoIdx, dto.TrayColor, dto.TrayType, dto.NozzleTempMin, dto.NozzleTempMax)
+	})
 }
 
 // printerStatusPayload flattens the printer status alongside its serial, so the
@@ -226,7 +202,7 @@ func (s *PrinterService) onPrinterStatusUpdate(serial string, state *dtos.BambuP
 	status := dtos.StatusFromMQTT(state)
 
 	if err := s.filamentRepo.CreateMissing(filamentsFromStatus(status)); err != nil {
-		fmt.Printf("Error recording filaments for printer %s: %v\n", serial, err)
+		slog.Error("failed to record filaments", "serial", serial, "error", err)
 	}
 
 	s.statusMu.RLock()
@@ -283,7 +259,7 @@ func (s *PrinterService) replayStatus(emit socketio.EmitFunc) {
 func (s *PrinterService) connectPrinterClients() {
 	printers, err := s.GetPrinters()
 	if err != nil {
-		fmt.Printf("Error fetching printers: %v\n", err)
+		slog.Error("failed to fetch printers", "error", err)
 		return
 	}
 
@@ -302,31 +278,30 @@ func containsPrinter(printers []models.Printer, serial string) bool {
 }
 
 func (s *PrinterService) reconcileCameraStreams() {
+	slog.Info("reconciling camera streams with printers")
+
 	printers, err := s.GetPrinters()
-
-	fmt.Println("Reconciling camera streams with printers...")
-
 	if err != nil {
-		fmt.Printf("Error fetching printers for stream reconciliation: %v\n", err)
+		slog.Error("failed to fetch printers for stream reconciliation", "error", err)
 		return
 	}
 
-	streams, err := s.cameraRepo.GetStreams()
+	streams, err := s.camera.GetStreams()
 	if err != nil {
-		fmt.Printf("Error fetching camera streams for reconciliation: %v\n", err)
+		slog.Error("failed to fetch camera streams for reconciliation", "error", err)
 		return
 	}
 
 	for _, printer := range printers {
 		stream, exists := streams[printer.Serial]
-		if !exists || stream.Producers[0].URL != printer.CameraURL() {
+		if !exists || len(stream.Producers) == 0 || stream.Producers[0].URL != printer.CameraURL() {
 			if exists {
-				if err := s.cameraRepo.UpdateStream(printer.Serial, printer.CameraURL()); err != nil {
-					fmt.Printf("Error updating stream for printer %s: %v\n", printer.Serial, err)
+				if err := s.camera.UpdateStream(printer.Serial, printer.CameraURL()); err != nil {
+					slog.Error("failed to update camera stream", "serial", printer.Serial, "error", err)
 				}
 			} else {
-				if err := s.cameraRepo.AddStream(printer.Serial, printer.CameraURL()); err != nil {
-					fmt.Printf("Error adding stream for printer %s: %v\n", printer.Serial, err)
+				if err := s.camera.AddStream(printer.Serial, printer.CameraURL()); err != nil {
+					slog.Error("failed to add camera stream", "serial", printer.Serial, "error", err)
 				}
 			}
 		}
@@ -334,17 +309,17 @@ func (s *PrinterService) reconcileCameraStreams() {
 
 	for serial := range streams {
 		if !containsPrinter(printers, serial) {
-			if err := s.cameraRepo.DeleteStream(serial); err != nil {
-				fmt.Printf("Error deleting stream for printer %s: %v\n", serial, err)
+			if err := s.camera.DeleteStream(serial); err != nil {
+				slog.Error("failed to delete camera stream", "serial", serial, "error", err)
 			}
 		}
 	}
 }
 
-func NewPrinterService(lc fx.Lifecycle, printerRepo *repositories.PrinterRepository, cameraRepo *repositories.CameraRepository, filamentRepo *repositories.FilamentRepository, socket *socketio.SocketIO) *PrinterService {
+func NewPrinterService(lc fx.Lifecycle, printerRepo *repositories.PrinterRepository, camera *go2rtc.Client, filamentRepo *repositories.FilamentRepository, socket *socketio.SocketIO) *PrinterService {
 	svc := &PrinterService{
 		printerRepo:  printerRepo,
-		cameraRepo:   cameraRepo,
+		camera:       camera,
 		filamentRepo: filamentRepo,
 		socketio:     socket,
 		clients:      make(map[string]*bambu.BambuClient),
