@@ -319,7 +319,7 @@ func (s *PrinterService) reconcileCameraStreams() {
 
 	for _, printer := range printers {
 		stream, exists := streams[printer.Serial]
-		if !exists || stream.Producers[0].URL != printer.CameraURL() {
+		if !exists || len(stream.Producers) == 0 || stream.Producers[0].URL != printer.CameraURL() {
 			if exists {
 				if err := s.cameraRepo.UpdateStream(printer.Serial, printer.CameraURL()); err != nil {
 					fmt.Printf("Error updating stream for printer %s: %v\n", printer.Serial, err)
