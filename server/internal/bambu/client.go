@@ -32,7 +32,7 @@ type StatusUpdateHandler func(serial string, state *dtos.BambuPrintState)
 
 type BambuClient struct {
 	ip        string
-	accesCode string
+	accessCode string
 	serial    string
 
 	mqttClient mqtt.Client
@@ -258,10 +258,10 @@ func (c *BambuClient) UnloadMaterial(amsID int) error {
 	})
 }
 
-func NewBambuClient(ip string, accesCode string, serial string, onStatusUpdate StatusUpdateHandler) *BambuClient {
+func NewBambuClient(ip string, accessCode string, serial string, onStatusUpdate StatusUpdateHandler) *BambuClient {
 	client := &BambuClient{
 		ip:             ip,
-		accesCode:      accesCode,
+		accessCode:      accessCode,
 		serial:         serial,
 		onStatusUpdate: onStatusUpdate,
 	}
@@ -270,7 +270,7 @@ func NewBambuClient(ip string, accesCode string, serial string, onStatusUpdate S
 	opts.AddBroker(fmt.Sprintf("mqtts://%s:%d", ip, 8883))
 	opts.SetClientID(fmt.Sprintf("crosshatch-%s", serial))
 	opts.SetUsername("bblp")
-	opts.SetPassword(accesCode)
+	opts.SetPassword(accessCode)
 	opts.SetKeepAlive(60)
 	opts.SetAutoReconnect(true)
 	opts.SetTLSConfig(&tls.Config{InsecureSkipVerify: true})
