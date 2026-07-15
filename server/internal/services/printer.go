@@ -5,6 +5,7 @@ import (
 	"crosshatch/internal/bambu"
 	"crosshatch/internal/database/models"
 	"crosshatch/internal/dtos"
+	"crosshatch/internal/go2rtc"
 	"crosshatch/internal/repositories"
 	"crosshatch/internal/socketio"
 	"fmt"
@@ -16,7 +17,7 @@ import (
 
 type PrinterService struct {
 	printerRepo  *repositories.PrinterRepository
-	cameraRepo   *repositories.CameraRepository
+	camera       *go2rtc.Client
 	filamentRepo *repositories.FilamentRepository
 	socketio     *socketio.SocketIO
 
@@ -285,7 +286,7 @@ func (s *PrinterService) reconcileCameraStreams() {
 		return
 	}
 
-	streams, err := s.cameraRepo.GetStreams()
+	streams, err := s.camera.GetStreams()
 	if err != nil {
 		slog.Error("failed to fetch camera streams for reconciliation", "error", err)
 		return
@@ -295,11 +296,11 @@ func (s *PrinterService) reconcileCameraStreams() {
 		stream, exists := streams[printer.Serial]
 		if !exists || len(stream.Producers) == 0 || stream.Producers[0].URL != printer.CameraURL() {
 			if exists {
-				if err := s.cameraRepo.UpdateStream(printer.Serial, printer.CameraURL()); err != nil {
+				if err := s.camera.UpdateStream(printer.Serial, printer.CameraURL()); err != nil {
 					slog.Error("failed to update camera stream", "serial", printer.Serial, "error", err)
 				}
 			} else {
-				if err := s.cameraRepo.AddStream(printer.Serial, printer.CameraURL()); err != nil {
+				if err := s.camera.AddStream(printer.Serial, printer.CameraURL()); err != nil {
 					slog.Error("failed to add camera stream", "serial", printer.Serial, "error", err)
 				}
 			}
@@ -308,17 +309,17 @@ func (s *PrinterService) reconcileCameraStreams() {
 
 	for serial := range streams {
 		if !containsPrinter(printers, serial) {
-			if err := s.cameraRepo.DeleteStream(serial); err != nil {
+			if err := s.camera.DeleteStream(serial); err != nil {
 				slog.Error("failed to delete camera stream", "serial", serial, "error", err)
 			}
 		}
 	}
 }
 
-func NewPrinterService(lc fx.Lifecycle, printerRepo *repositories.PrinterRepository, cameraRepo *repositories.CameraRepository, filamentRepo *repositories.FilamentRepository, socket *socketio.SocketIO) *PrinterService {
+func NewPrinterService(lc fx.Lifecycle, printerRepo *repositories.PrinterRepository, camera *go2rtc.Client, filamentRepo *repositories.FilamentRepository, socket *socketio.SocketIO) *PrinterService {
 	svc := &PrinterService{
 		printerRepo:  printerRepo,
-		cameraRepo:   cameraRepo,
+		camera:       camera,
 		filamentRepo: filamentRepo,
 		socketio:     socket,
 		clients:      make(map[string]*bambu.BambuClient),
