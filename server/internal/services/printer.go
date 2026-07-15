@@ -8,6 +8,7 @@ import (
 	"crosshatch/internal/repositories"
 	"crosshatch/internal/socketio"
 	"fmt"
+	"log/slog"
 	"sync"
 
 	"go.uber.org/fx"
@@ -226,7 +227,7 @@ func (s *PrinterService) onPrinterStatusUpdate(serial string, state *dtos.BambuP
 	status := dtos.StatusFromMQTT(state)
 
 	if err := s.filamentRepo.CreateMissing(filamentsFromStatus(status)); err != nil {
-		fmt.Printf("Error recording filaments for printer %s: %v\n", serial, err)
+		slog.Error("failed to record filaments", "serial", serial, "error", err)
 	}
 
 	s.statusMu.RLock()
@@ -283,7 +284,7 @@ func (s *PrinterService) replayStatus(emit socketio.EmitFunc) {
 func (s *PrinterService) connectPrinterClients() {
 	printers, err := s.GetPrinters()
 	if err != nil {
-		fmt.Printf("Error fetching printers: %v\n", err)
+		slog.Error("failed to fetch printers", "error", err)
 		return
 	}
 
@@ -302,18 +303,17 @@ func containsPrinter(printers []models.Printer, serial string) bool {
 }
 
 func (s *PrinterService) reconcileCameraStreams() {
+	slog.Info("reconciling camera streams with printers")
+
 	printers, err := s.GetPrinters()
-
-	fmt.Println("Reconciling camera streams with printers...")
-
 	if err != nil {
-		fmt.Printf("Error fetching printers for stream reconciliation: %v\n", err)
+		slog.Error("failed to fetch printers for stream reconciliation", "error", err)
 		return
 	}
 
 	streams, err := s.cameraRepo.GetStreams()
 	if err != nil {
-		fmt.Printf("Error fetching camera streams for reconciliation: %v\n", err)
+		slog.Error("failed to fetch camera streams for reconciliation", "error", err)
 		return
 	}
 
@@ -322,11 +322,11 @@ func (s *PrinterService) reconcileCameraStreams() {
 		if !exists || len(stream.Producers) == 0 || stream.Producers[0].URL != printer.CameraURL() {
 			if exists {
 				if err := s.cameraRepo.UpdateStream(printer.Serial, printer.CameraURL()); err != nil {
-					fmt.Printf("Error updating stream for printer %s: %v\n", printer.Serial, err)
+					slog.Error("failed to update camera stream", "serial", printer.Serial, "error", err)
 				}
 			} else {
 				if err := s.cameraRepo.AddStream(printer.Serial, printer.CameraURL()); err != nil {
-					fmt.Printf("Error adding stream for printer %s: %v\n", printer.Serial, err)
+					slog.Error("failed to add camera stream", "serial", printer.Serial, "error", err)
 				}
 			}
 		}
@@ -335,7 +335,7 @@ func (s *PrinterService) reconcileCameraStreams() {
 	for serial := range streams {
 		if !containsPrinter(printers, serial) {
 			if err := s.cameraRepo.DeleteStream(serial); err != nil {
-				fmt.Printf("Error deleting stream for printer %s: %v\n", serial, err)
+				slog.Error("failed to delete camera stream", "serial", serial, "error", err)
 			}
 		}
 	}

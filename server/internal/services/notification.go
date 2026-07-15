@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 
 	"crosshatch/internal/dtos"
@@ -80,13 +81,13 @@ func (s *NotificationService) Notify(serial, event string) {
 
 	body, err := json.Marshal(payload)
 	if err != nil {
-		fmt.Printf("Error marshaling notification payload: %v\n", err)
+		slog.Error("failed to marshal notification payload", "error", err)
 		return
 	}
 
 	subs, err := s.notifications.SubscriptionsForEvent(serial, event)
 	if err != nil {
-		fmt.Printf("Error finding subscriptions for printer %s: %v\n", serial, err)
+		slog.Error("failed to find subscriptions", "serial", serial, "error", err)
 		return
 	}
 
@@ -133,21 +134,21 @@ func (s *NotificationService) send(endpoint, p256dh, auth string, body []byte) {
 		TTL:             60,
 	})
 	if err != nil {
-		fmt.Printf("Error sending web push to %s: %v\n", endpoint, err)
+		slog.Error("failed to send web push", "endpoint", endpoint, "error", err)
 		return
 	}
 	defer res.Body.Close()
 
 	if res.StatusCode == http.StatusNotFound || res.StatusCode == http.StatusGone {
 		if err := s.notifications.DeleteSubscriptionByEndpoint(endpoint); err != nil {
-			fmt.Printf("Error deleting stale subscription %s: %v\n", endpoint, err)
+			slog.Error("failed to delete stale subscription", "endpoint", endpoint, "error", err)
 		}
 		return
 	}
 
 	if res.StatusCode >= 300 {
 		responseBody, _ := io.ReadAll(res.Body)
-		fmt.Printf("Web push to %s rejected: %d %s\n", endpoint, res.StatusCode, string(responseBody))
+		slog.Warn("web push rejected", "endpoint", endpoint, "status", res.StatusCode, "body", string(responseBody))
 	}
 }
 
