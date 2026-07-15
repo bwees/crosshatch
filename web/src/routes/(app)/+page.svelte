@@ -22,7 +22,7 @@
 	</Button>
 </div>
 
-<div class="lg-grid-cols-3 grid grid-cols-1 gap-4 md:grid-cols-2">
+<div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
 	{#each printerManager.printers.entries() as [serial, printer] (serial)}
 		<Card
 			class="w-full cursor-pointer p-4 transition-colors hover:bg-secondary/70"
