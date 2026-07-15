@@ -32,9 +32,9 @@ const (
 type StatusUpdateHandler func(serial string, state *dtos.BambuPrintState)
 
 type BambuClient struct {
-	ip        string
+	ip         string
 	accessCode string
-	serial    string
+	serial     string
 
 	mqttClient mqtt.Client
 
@@ -262,7 +262,7 @@ func (c *BambuClient) UnloadMaterial(amsID int) error {
 func NewBambuClient(ip string, accessCode string, serial string, onStatusUpdate StatusUpdateHandler) *BambuClient {
 	client := &BambuClient{
 		ip:             ip,
-		accessCode:      accessCode,
+		accessCode:     accessCode,
 		serial:         serial,
 		onStatusUpdate: onStatusUpdate,
 	}
