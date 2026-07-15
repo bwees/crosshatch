@@ -1,8 +1,7 @@
 package services
 
 import (
-	"os"
-
+	"crosshatch/internal/config"
 	"crosshatch/internal/database/models"
 	"crosshatch/internal/dtos"
 
@@ -26,13 +25,10 @@ func (s *VapidService) PrivateKey() string { return s.privateKey }
 func (s *VapidService) Subject() string    { return s.subject }
 
 func NewVapidService(db *gorm.DB) (*VapidService, error) {
-	subject := os.Getenv("VAPID_SUBJECT")
-	if subject == "" {
-		subject = "crosshatch@bwees.io"
-	}
+	subject := config.VapidSubject()
 
-	public := os.Getenv("VAPID_PUBLIC_KEY")
-	private := os.Getenv("VAPID_PRIVATE_KEY")
+	public := config.VapidPublicKey()
+	private := config.VapidPrivateKey()
 
 	if public == "" || private == "" {
 		stored, err := loadVapidKeys(db)

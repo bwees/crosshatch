@@ -3,12 +3,12 @@
 package go2rtc
 
 import (
+	"crosshatch/internal/config"
 	"crosshatch/internal/dtos"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
-	"os"
 	"time"
 
 	"go.uber.org/fx"
@@ -103,13 +103,8 @@ func (r *Client) UpdateStream(id string, streamURL string) error {
 }
 
 func NewClient() *Client {
-	baseURL := os.Getenv("GO2RTC_API_URL")
-	if baseURL == "" {
-		baseURL = "http://localhost:1984"
-	}
-
 	return &Client{
-		baseURL: baseURL,
+		baseURL: config.Go2RTCAPIURL(),
 		client:  &http.Client{Timeout: 10 * time.Second},
 	}
 }

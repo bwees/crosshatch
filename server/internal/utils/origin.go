@@ -3,8 +3,9 @@ package utils
 import (
 	"net/http"
 	"net/url"
-	"os"
 	"strings"
+
+	"crosshatch/internal/config"
 )
 
 func AllowedOrigin(r *http.Request) bool {
@@ -21,8 +22,8 @@ func AllowedOrigin(r *http.Request) bool {
 		return true
 	}
 
-	for _, allowed := range strings.Split(os.Getenv("WS_ALLOWED_ORIGINS"), ",") {
-		if allowed = strings.TrimSpace(allowed); allowed != "" && strings.EqualFold(allowed, origin) {
+	for _, allowed := range config.AllowedOrigins() {
+		if strings.EqualFold(allowed, origin) {
 			return true
 		}
 	}
