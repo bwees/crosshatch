@@ -26,20 +26,19 @@ type pushPayload struct {
 	Tag           string `json:"tag"`
 }
 
-// classifyTransition maps a status change to a notification event. It returns
-// ("complete"|"error", true) when the transition warrants a notification, and
-// ("", false) otherwise.
-func classifyTransition(prev, next *dtos.PrinterStatus) (string, bool) {
+// classifyTransition maps a status change to a notification event. The second
+// return is true when the transition warrants a notification.
+func classifyTransition(prev, next *dtos.PrinterStatus) (dtos.NotificationEvent, bool) {
 	if next == nil {
 		return "", false
 	}
 
-	if prev != nil && prev.State == "RUNNING" && next.State == "FINISH" {
-		return "complete", true
+	if prev != nil && prev.State == dtos.GcodeRunning && next.State == dtos.GcodeFinish {
+		return dtos.EventComplete, true
 	}
 
-	if next.State == "FAILED" && (prev == nil || prev.State != "FAILED") {
-		return "error", true
+	if next.State == dtos.GcodeFailed && (prev == nil || prev.State != dtos.GcodeFailed) {
+		return dtos.EventError, true
 	}
 
 	return "", false
@@ -61,9 +60,9 @@ func (s *NotificationService) printerName(serial string) string {
 	return serial
 }
 
-// Notify builds and delivers a push notification for the given event
-// ("complete" or "error") to every device subscribed to it for this printer.
-func (s *NotificationService) Notify(serial, event string) {
+// Notify builds and delivers a push notification for the given event to every
+// device subscribed to it for this printer.
+func (s *NotificationService) Notify(serial string, event dtos.NotificationEvent) {
 	name := s.printerName(serial)
 
 	payload := pushPayload{
@@ -71,10 +70,10 @@ func (s *NotificationService) Notify(serial, event string) {
 		Tag:           "crosshatch-" + serial,
 	}
 	switch event {
-	case "complete":
+	case dtos.EventComplete:
 		payload.Title = "Print complete"
 		payload.Body = name + " finished printing"
-	case "error":
+	case dtos.EventError:
 		payload.Title = "Print error"
 		payload.Body = name + " reported an error"
 	}

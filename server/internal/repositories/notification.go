@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"crosshatch/internal/database/models"
+	"crosshatch/internal/dtos"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -73,17 +74,16 @@ func (r *NotificationRepository) DeleteSettingsForUser(userID string) error {
 }
 
 // SubscriptionsForEvent returns the push subscriptions of every device whose
-// setting for the serial is enabled and opts into the given event
-// ("complete" or "error").
-func (r *NotificationRepository) SubscriptionsForEvent(serial, event string) ([]models.PushSubscription, error) {
+// setting for the serial is enabled and opts into the given event.
+func (r *NotificationRepository) SubscriptionsForEvent(serial string, event dtos.NotificationEvent) ([]models.PushSubscription, error) {
 	query := r.db.
 		Joins("JOIN notification_setting ns ON ns.device_id = push_subscription.device_id").
 		Where("ns.printer_serial = ? AND ns.enabled = ?", serial, true)
 
 	switch event {
-	case "complete":
+	case dtos.EventComplete:
 		query = query.Where("ns.notify_complete = ?", true)
-	case "error":
+	case dtos.EventError:
 		query = query.Where("ns.notify_error = ?", true)
 	default:
 		return []models.PushSubscription{}, nil
