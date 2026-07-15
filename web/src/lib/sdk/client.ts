@@ -155,6 +155,12 @@ export type PrinterStatus = {
         temperature: number;
     };
     chamberLight: boolean;
+    error?: {
+        cancelled?: boolean;
+        code: string;
+        message?: string;
+        summary: string;
+    };
     externalSpool?: {
         brand?: string;
         color?: string;

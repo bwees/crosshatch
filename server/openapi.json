@@ -317,6 +317,27 @@
 					"chamberLight": {
 						"type": "boolean"
 					},
+					"error": {
+						"properties": {
+							"cancelled": {
+								"type": "boolean"
+							},
+							"code": {
+								"type": "string"
+							},
+							"message": {
+								"type": "string"
+							},
+							"summary": {
+								"type": "string"
+							}
+						},
+						"required": [
+							"code",
+							"summary"
+						],
+						"type": "object"
+					},
 					"externalSpool": {
 						"properties": {
 							"brand": {

@@ -43,6 +43,7 @@ func (n *Number) UnmarshalJSON(data []byte) error {
 
 type BambuPrintState struct {
 	GcodeState             string       `json:"gcode_state"`
+	PrintError             Number       `json:"print_error"`
 	StgCur                 *Number      `json:"stg_cur"`
 	McPercent              Number       `json:"mc_percent"`
 	File                   string       `json:"file"`

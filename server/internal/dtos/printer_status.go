@@ -58,6 +58,7 @@ type FanStatus struct {
 
 type PrinterStatus struct {
 	State         string        `json:"state" validate:"required"`
+	Error         *PrinterError `json:"error,omitempty"`
 	Stage         *PrinterStage `json:"stage,omitempty"`
 	Progress      float64       `json:"progress" validate:"required"`
 	FileName      *string       `json:"fileName,omitempty"`
@@ -79,6 +80,7 @@ func StatusFromMQTT(s *BambuPrintState) PrinterStatus {
 
 	status := PrinterStatus{
 		State:        s.GcodeState,
+		Error:        DecodePrintError(uint32(s.PrintError)),
 		Progress:     float64(s.McPercent),
 		BuildPlate:   Temperature{Temperature: float64(s.BedTemper), TargetTemperature: float64(s.BedTargetTemper)},
 		Nozzle:       Temperature{Temperature: float64(s.NozzleTemper), TargetTemperature: float64(s.NozzleTargetTemper)},

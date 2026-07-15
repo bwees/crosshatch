@@ -26,30 +26,48 @@ type pushPayload struct {
 	Tag           string `json:"tag"`
 }
 
-// classifyTransition maps a status change to a notification event. The second
-// return is true when the transition warrants a notification.
-func classifyTransition(prev, next *dtos.PrinterStatus) (dtos.NotificationEvent, bool) {
+// pushMessage is a notification ready to deliver: the event drives per-printer
+// subscription filtering, while title/body are the rendered strings.
+type pushMessage struct {
+	Event dtos.NotificationEvent
+	Title string
+	Body  string
+}
+
+// classifyTransition maps a status change to a notification for the printer
+// named `name`. The second return is true when the transition warrants one.
+func classifyTransition(name string, prev, next *dtos.PrinterStatus) (pushMessage, bool) {
 	if next == nil {
-		return "", false
+		return pushMessage{}, false
+	}
+
+	// A newly-reported print error takes precedence and fires regardless of
+	// gcode_state, so mid-print faults that only pause are still surfaced.
+	if next.Error != nil && (prev == nil || prev.Error == nil) {
+		if next.Error.Cancelled {
+			return pushMessage{dtos.EventError, "Print cancelled", name + " print was cancelled"}, true
+		}
+		return pushMessage{dtos.EventError, "Print error", name + ": " + next.Error.Summary}, true
 	}
 
 	if prev != nil && prev.State == dtos.GcodeRunning && next.State == dtos.GcodeFinish {
-		return dtos.EventComplete, true
+		return pushMessage{dtos.EventComplete, "Print complete", name + " finished printing"}, true
 	}
 
+	// Fallback: entered FAILED without a decoded error code.
 	if next.State == dtos.GcodeFailed && (prev == nil || prev.State != dtos.GcodeFailed) {
-		return dtos.EventError, true
+		return pushMessage{dtos.EventError, "Print error", name + " reported an error"}, true
 	}
 
-	return "", false
+	return pushMessage{}, false
 }
 
 func (s *NotificationService) onTransition(serial string, prev, next *dtos.PrinterStatus) {
-	event, ok := classifyTransition(prev, next)
+	msg, ok := classifyTransition(s.printerName(serial), prev, next)
 	if !ok {
 		return
 	}
-	s.Notify(serial, event)
+	s.deliver(serial, msg)
 }
 
 // printerName returns the printer's display name, falling back to its serial.
@@ -60,31 +78,21 @@ func (s *NotificationService) printerName(serial string) string {
 	return serial
 }
 
-// Notify builds and delivers a push notification for the given event to every
-// device subscribed to it for this printer.
-func (s *NotificationService) Notify(serial string, event dtos.NotificationEvent) {
-	name := s.printerName(serial)
-
-	payload := pushPayload{
+// deliver sends a push notification to every device subscribed to its event
+// for this printer.
+func (s *NotificationService) deliver(serial string, msg pushMessage) {
+	body, err := json.Marshal(pushPayload{
 		PrinterSerial: serial,
+		Title:         msg.Title,
+		Body:          msg.Body,
 		Tag:           "crosshatch-" + serial,
-	}
-	switch event {
-	case dtos.EventComplete:
-		payload.Title = "Print complete"
-		payload.Body = name + " finished printing"
-	case dtos.EventError:
-		payload.Title = "Print error"
-		payload.Body = name + " reported an error"
-	}
-
-	body, err := json.Marshal(payload)
+	})
 	if err != nil {
 		slog.Error("failed to marshal notification payload", "error", err)
 		return
 	}
 
-	subs, err := s.notifications.SubscriptionsForEvent(serial, event)
+	subs, err := s.notifications.SubscriptionsForEvent(serial, msg.Event)
 	if err != nil {
 		slog.Error("failed to find subscriptions", "serial", serial, "error", err)
 		return

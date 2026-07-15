@@ -7,6 +7,7 @@
 	import type { Printer, PrinterStatus } from '$lib/sdk';
 	import { stageMessage } from '$lib/utils/printer_status';
 	import { DateTime, Duration } from 'luxon';
+	import { BanIcon, TriangleAlertIcon } from '@lucide/svelte';
 
 	type Props = {
 		printer: Printer | undefined;
@@ -28,6 +29,26 @@
 
 <Card class="w-full p-4">
 	<div class="flex flex-col gap-3">
+		{#if state?.error}
+			{@const cancelled = state.error.cancelled}
+			<div
+				title={state.error.message || undefined}
+				class="flex items-start gap-2 rounded-md border p-2 text-sm {cancelled
+					? 'border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400'
+					: 'border-destructive/40 bg-destructive/10 text-destructive'}"
+			>
+				{#if cancelled}
+					<BanIcon class="mt-0.5 size-4 shrink-0" />
+				{:else}
+					<TriangleAlertIcon class="mt-0.5 size-4 shrink-0" />
+				{/if}
+				<div class="min-w-0">
+					<p class="font-medium">{state.error.summary}</p>
+					<p class="text-xs opacity-70">{state.error.code}</p>
+				</div>
+			</div>
+		{/if}
+
 		<div class="flex items-center justify-between">
 			<div>
 				<p class="text-xl font-bold text-primary">{state?.progress ?? '--'}%</p>
