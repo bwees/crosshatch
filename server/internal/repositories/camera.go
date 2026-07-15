@@ -7,14 +7,16 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"time"
 )
 
 type CameraRepository struct {
 	baseURL string
+	client  *http.Client
 }
 
 func (r *CameraRepository) GetStreams() (map[string]dtos.Go2RTCStream, error) {
-	res, err := http.Get(r.baseURL + "/api/streams")
+	res, err := r.client.Get(r.baseURL + "/api/streams")
 	if err != nil {
 		return nil, err
 	}
@@ -34,12 +36,15 @@ func (r *CameraRepository) DeleteStream(id string) error {
 		return err
 	}
 
-	res, err := http.DefaultClient.Do(req)
+	res, err := r.client.Do(req)
 	if err != nil {
 		return err
 	}
-
 	defer res.Body.Close()
+
+	if res.StatusCode < 200 || res.StatusCode >= 300 {
+		return fmt.Errorf("failed to delete stream for printer %s: %s", id, res.Status)
+	}
 
 	return nil
 }
@@ -56,7 +61,7 @@ func (r *CameraRepository) AddStream(id string, streamURL string) error {
 		return err
 	}
 
-	res, err := http.DefaultClient.Do(req)
+	res, err := r.client.Do(req)
 	if err != nil {
 		return err
 	}
@@ -80,7 +85,7 @@ func (r *CameraRepository) UpdateStream(id string, streamURL string) error {
 		return err
 	}
 
-	res, err := http.DefaultClient.Do(req)
+	res, err := r.client.Do(req)
 	if err != nil {
 		return err
 	}
@@ -99,5 +104,8 @@ func NewCameraRepository() *CameraRepository {
 		baseURL = "http://localhost:1984"
 	}
 
-	return &CameraRepository{baseURL: baseURL}
+	return &CameraRepository{
+		baseURL: baseURL,
+		client:  &http.Client{Timeout: 10 * time.Second},
+	}
 }
