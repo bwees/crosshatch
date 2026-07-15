@@ -124,68 +124,48 @@ func (s *PrinterService) client(serial string) (*bambu.BambuClient, error) {
 	return client, nil
 }
 
-func (s *PrinterService) StopPrint(serial string) error {
+// withClient resolves the Bambu client for a serial and runs fn against it,
+// so the control methods below don't each repeat the lookup-and-check.
+func (s *PrinterService) withClient(serial string, fn func(*bambu.BambuClient) error) error {
 	client, err := s.client(serial)
 	if err != nil {
 		return err
 	}
-	return client.StopPrint()
+	return fn(client)
+}
+
+func (s *PrinterService) StopPrint(serial string) error {
+	return s.withClient(serial, func(c *bambu.BambuClient) error { return c.StopPrint() })
 }
 
 func (s *PrinterService) PausePrint(serial string) error {
-	client, err := s.client(serial)
-	if err != nil {
-		return err
-	}
-	return client.PausePrint()
+	return s.withClient(serial, func(c *bambu.BambuClient) error { return c.PausePrint() })
 }
 
 func (s *PrinterService) ResumePrint(serial string) error {
-	client, err := s.client(serial)
-	if err != nil {
-		return err
-	}
-	return client.ResumePrint()
+	return s.withClient(serial, func(c *bambu.BambuClient) error { return c.ResumePrint() })
 }
 
 func (s *PrinterService) SetLight(serial string, on bool) error {
-	client, err := s.client(serial)
-	if err != nil {
-		return err
-	}
-	return client.SetLight(on)
+	return s.withClient(serial, func(c *bambu.BambuClient) error { return c.SetLight(on) })
 }
 
 func (s *PrinterService) UnloadMaterial(serial string, amsID int) error {
-	client, err := s.client(serial)
-	if err != nil {
-		return err
-	}
-	return client.UnloadMaterial(amsID)
+	return s.withClient(serial, func(c *bambu.BambuClient) error { return c.UnloadMaterial(amsID) })
 }
 
 func (s *PrinterService) StartDrying(serial string, amsID int, dto dtos.StartDryingDto) error {
-	client, err := s.client(serial)
-	if err != nil {
-		return err
-	}
-	return client.StartDrying(amsID, dto.Temperature, dto.Duration, dto.CoolingTemp, dto.Filament, dto.RotateTray)
+	return s.withClient(serial, func(c *bambu.BambuClient) error {
+		return c.StartDrying(amsID, dto.Temperature, dto.Duration, dto.CoolingTemp, dto.Filament, dto.RotateTray)
+	})
 }
 
 func (s *PrinterService) StopDrying(serial string, amsID int) error {
-	client, err := s.client(serial)
-	if err != nil {
-		return err
-	}
-	return client.StopDrying(amsID)
+	return s.withClient(serial, func(c *bambu.BambuClient) error { return c.StopDrying(amsID) })
 }
 
 func (s *PrinterService) SetPrintSpeed(serial string, level int) error {
-	client, err := s.client(serial)
-	if err != nil {
-		return err
-	}
-	return client.SetPrintSpeed(level)
+	return s.withClient(serial, func(c *bambu.BambuClient) error { return c.SetPrintSpeed(level) })
 }
 
 var fanNodes = map[string]int{
@@ -199,19 +179,13 @@ func (s *PrinterService) SetFan(serial string, fan string, speed int) error {
 	if !ok {
 		return fmt.Errorf("unknown fan %q", fan)
 	}
-	client, err := s.client(serial)
-	if err != nil {
-		return err
-	}
-	return client.SetFanSpeed(node, speed)
+	return s.withClient(serial, func(c *bambu.BambuClient) error { return c.SetFanSpeed(node, speed) })
 }
 
 func (s *PrinterService) SetFilament(serial string, dto dtos.SetFilamentDto) error {
-	client, err := s.client(serial)
-	if err != nil {
-		return err
-	}
-	return client.SetFilament(dto.AmsID, dto.TrayID, dto.TrayInfoIdx, dto.TrayColor, dto.TrayType, dto.NozzleTempMin, dto.NozzleTempMax)
+	return s.withClient(serial, func(c *bambu.BambuClient) error {
+		return c.SetFilament(dto.AmsID, dto.TrayID, dto.TrayInfoIdx, dto.TrayColor, dto.TrayType, dto.NozzleTempMin, dto.NozzleTempMax)
+	})
 }
 
 // printerStatusPayload flattens the printer status alongside its serial, so the
