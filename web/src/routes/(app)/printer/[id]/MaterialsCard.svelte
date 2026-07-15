@@ -12,6 +12,9 @@
 	type AMSUnit = PrinterStatus['ams'][number];
 	type Tray = AMSUnit['trays'][number];
 
+	const EXTERNAL_SPOOL_AMS_ID = 255;
+	const EXTERNAL_SPOOL_TRAY_ID = 254;
+
 	type Props = {
 		state: PrinterStatus | undefined;
 		printer: Printer | undefined;
@@ -40,10 +43,12 @@
 
 	let dryingUnit = $derived(ams.find((unit) => unit.id === dryingTarget?.amsId));
 
-	let currentlyLoadedUnitID = $derived(
-		ams.find((unit) => unit.trays.some((tray) => tray.loaded))?.id ??
-			(externalSpool?.loaded ? 255 : 0)
-	);
+	let currentlyLoadedUnitID = $derived.by(() => {
+		const loadedUnit = ams.find((unit) => unit.trays.some((tray) => tray.loaded));
+		if (loadedUnit) return loadedUnit.id;
+		if (externalSpool?.loaded) return EXTERNAL_SPOOL_AMS_ID;
+		return undefined;
+	});
 
 	function bambuColorToCss(color?: string): string {
 		if (!color) return 'transparent';
@@ -62,7 +67,7 @@
 	}
 
 	async function unload() {
-		if (!currentlyLoadedUnitID) return;
+		if (currentlyLoadedUnitID === undefined) return;
 		await unloadMaterial(printer?.serial ?? '', currentlyLoadedUnitID.toString());
 	}
 </script>
@@ -73,7 +78,7 @@
 		<Button
 			variant="outline"
 			size="sm"
-			disabled={!currentlyLoadedUnitID}
+			disabled={currentlyLoadedUnitID === undefined}
 			color="primary"
 			onclick={unload}>Unload</Button
 		>
@@ -164,8 +169,8 @@
 			<div class="w-1/4">
 				{@render trayCard(tray, {
 					slotLabel: '',
-					amsId: 255,
-					trayId: 254,
+					amsId: EXTERNAL_SPOOL_AMS_ID,
+					trayId: EXTERNAL_SPOOL_TRAY_ID,
 					title: 'External Spool'
 				})}
 			</div>
